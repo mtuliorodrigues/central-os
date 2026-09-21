@@ -62,6 +62,7 @@ function itemHtml(item, absoluteIndex) {
         '<div class="meta-line">',
           '<span>' + idLabel + '</span>',
           '<span>' + formatDate(item.date) + '</span>',
+          item.sender ? '<span>Enviado por ' + escapeHtml(item.sender) + '</span>' : '',
           item.groupName ? '<span>' + escapeHtml(item.groupName) + '</span>' : '',
           '<span class="confidence ' + escapeHtml(item.confidence) + '">Confiança ' + escapeHtml(item.confidence) + '</span>',
         '</div>',
@@ -71,7 +72,7 @@ function itemHtml(item, absoluteIndex) {
         '<div><label>Cliente</label><p>' + escapeHtml(item.client || ref.client || "—") + '</p></div>',
         '<div><label>Identificação</label><p>' + idLabel + '</p></div>',
         '<div><label>Login</label><p>' + escapeHtml(item.login || ref.login || "—") + '</p></div>',
-        '<div><label>Serviço</label><p>' + escapeHtml(item.service || ref.service || "—") + '</p></div>',
+        '<div><label>Enviado por</label><p>' + escapeHtml(item.sender || "—") + '</p></div>',
       '</div>',
 
       '<div class="description-box">',
