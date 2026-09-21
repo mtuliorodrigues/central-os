@@ -14,6 +14,7 @@ const dataDir = path.join(root, "data");
 const importFile = path.join(dataDir, "current-import.json");
 const analysisFile = path.join(dataDir, "current-analysis.json");
 const historyFile = path.join(dataDir, "analysis-history.json");
+const historyDetailsDir = path.join(dataDir, "history-details");
 const port = Number(process.env.CENTRAL_OS_PORT || 8787);
 
 const primaryGroupJid = process.env.SOURCE_GROUP_JID || "553497702861-1601827551@g.us";
@@ -159,6 +160,7 @@ async function clearAnalysisCache() {
 }
 
 async function saveImport(data) {
+  await archiveCurrentAnalysis();
   const prepared = { ...data, importId: data.importId || randomUUID() };
   await writeCurrentImport(prepared);
   await clearAnalysisCache();
@@ -204,6 +206,67 @@ async function readAnalysisCache() {
 async function writeAnalysisCache(cache) {
   await mkdir(dataDir, { recursive: true });
   await writeFile(analysisFile, JSON.stringify(cache, null, 2), "utf8");
+}
+
+function safeHistoryId(value) {
+  const id = String(value || "").trim();
+  return /^[a-zA-Z0-9_-]{6,128}$/.test(id) ? id : null;
+}
+
+async function writeHistorySnapshot(importId, full) {
+  const id = safeHistoryId(importId);
+  if (!id || !full) return;
+  await mkdir(historyDetailsDir, { recursive: true });
+  await writeFile(
+    path.join(historyDetailsDir, `${id}.json`),
+    JSON.stringify({
+      id,
+      fileName: full?.import?.fileName || "",
+      importedAt: full?.import?.importedAt || "",
+      analyzedAt: new Date().toISOString(),
+      days: full?.days || 30,
+      groups: (full?.groups || []).map(group => group.name),
+      analysis: full
+    }, null, 2),
+    "utf8"
+  );
+}
+
+async function archiveCurrentAnalysis() {
+  try {
+    const currentImport = await getCurrentImport();
+    const cache = await readAnalysisCache();
+    if (currentImport?.importId && cache?.importId === currentImport.importId && cache?.full) {
+      await writeHistorySnapshot(currentImport.importId, cache.full);
+    }
+  } catch {}
+}
+
+async function readHistorySnapshot(importId) {
+  const id = safeHistoryId(importId);
+  if (!id) return null;
+
+  try {
+    return JSON.parse(await readFile(path.join(historyDetailsDir, `${id}.json`), "utf8"));
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+
+  const currentImport = await getCurrentImport();
+  const cache = await readAnalysisCache();
+  if (currentImport?.importId === id && cache?.importId === id && cache?.full) {
+    return {
+      id,
+      fileName: cache.full?.import?.fileName || currentImport.fileName || "",
+      importedAt: cache.full?.import?.importedAt || currentImport.importedAt || "",
+      analyzedAt: cache.generatedAt || cache.full?.generatedAt || "",
+      days: cache.full?.days || 30,
+      groups: (cache.full?.groups || []).map(group => group.name),
+      analysis: cache.full
+    };
+  }
+
+  return null;
 }
 
 async function discoverGroupConfiguration() {
@@ -342,6 +405,7 @@ async function processAnalysis() {
     }
   });
 
+  await writeHistorySnapshot(currentImport.importId, full);
   return full;
 }
 
@@ -506,6 +570,18 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/historico" && req.method === "GET") {
       return json(res, 200, { history: await readHistory() });
+    }
+
+    if (url.pathname.startsWith("/api/historico/") && req.method === "GET") {
+      const id = decodeURIComponent(url.pathname.slice("/api/historico/".length));
+      const snapshot = await readHistorySnapshot(id);
+      if (!snapshot) {
+        return json(res, 404, {
+          error: "Os detalhes completos desta análise não foram armazenados.",
+          code: "history_details_unavailable"
+        });
+      }
+      return json(res, 200, snapshot);
     }
 
     if (url.pathname === "/api/analise" && req.method === "GET") {
