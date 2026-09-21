@@ -3678,3 +3678,24 @@ body[data-page="dashboard"] .dashboard-brand-header .page-title::after{
     right:0;
   }
 }
+
+
+/* Dashboard final: centraliza somente o título Central OS no conjunto principal */
+body[data-page="dashboard"] .dashboard-brand-header{
+  margin-left:auto!important;
+  margin-right:auto!important;
+  width:100%!important;
+  display:grid;
+  justify-items:center;
+}
+body[data-page="dashboard"] .dashboard-brand-header .page-title{
+  width:max-content;
+  max-width:100%;
+  margin-left:auto!important;
+  margin-right:auto!important;
+  text-align:center!important;
+}
+body[data-page="dashboard"] .dashboard-brand-header .page-title::after{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
