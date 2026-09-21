@@ -1,11 +1,11 @@
 {
   "name": "central-os",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js"
+    "check": "node --check src/index.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js"
   },
   "dependencies": {
     "dotenv": "^16.4.5"
