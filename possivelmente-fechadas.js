@@ -216,8 +216,9 @@ async function load(force = false) {
     render(data);
   } catch (error) {
     items = [];
-    if (error?.code === "spreadsheet_required") {
+    if (error?.code === "spreadsheet_required" || error?.code === "analysis_required") {
       showSpreadsheetRequired();
+      statusEl.textContent = error?.code === "analysis_required" ? "Análise necessária" : "Planilha necessária";
       return;
     }
     statusEl.textContent = "Indisponível";
