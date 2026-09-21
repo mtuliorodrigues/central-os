@@ -1,24 +1,5 @@
 import { localApiFetch } from "/local-api.js";
 
-function ensureImportButton() {
-  const currentPage = document.body.dataset.page || "dashboard";
-  const actions = document.querySelector(".topbar__actions");
-  if (!actions) return;
-
-  actions.querySelectorAll(".global-import-button").forEach(button => button.remove());
-  if (currentPage === "importar") return;
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "secondary-button global-import-button";
-  button.dataset.importPlanilha = "";
-  button.textContent = "Importar planilha";
-  actions.appendChild(button);
-}
-
-ensureImportButton();
-window.addEventListener("centralos:navigated", ensureImportButton);
-
 const fileInput = document.createElement("input");
 fileInput.type = "file";
 fileInput.accept = ".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv";
@@ -152,6 +133,7 @@ document.addEventListener("click", event => {
   const trigger = event.target.closest("[data-import-planilha]");
   if (!trigger) return;
   event.preventDefault();
+  if ((document.body.dataset.page || "dashboard") !== "dashboard") return;
   fileInput.click();
 });
 
