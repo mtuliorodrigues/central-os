@@ -1,17 +1,18 @@
 import "dotenv/config";
 import http from "node:http";
 import { randomUUID } from "node:crypto";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readGroupHistoryFromDocker, listWhatsAppGroupsFromDocker } from "./postgres-docker.js";
-import { analyzeSpreadsheetReferences, findPossiblyClosed } from "./possibly-closed.js";
+import { analyzeSpreadsheetReferences } from "./possibly-closed.js";
 import { parseSpreadsheetBuffer, publicImportSummary } from "./spreadsheet-import.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
 const dataDir = path.join(root, "data");
 const importFile = path.join(dataDir, "current-import.json");
+const analysisFile = path.join(dataDir, "current-analysis.json");
 const historyFile = path.join(dataDir, "analysis-history.json");
 const port = Number(process.env.CENTRAL_OS_PORT || 8787);
 
@@ -58,7 +59,6 @@ function normalizeName(value) {
 async function readJsonBody(req, maxBytes = 24 * 1024 * 1024) {
   const chunks = [];
   let size = 0;
-
   for await (const chunk of req) {
     size += chunk.length;
     if (size > maxBytes) {
@@ -152,12 +152,16 @@ async function writeCurrentImport(data) {
   await writeFile(importFile, JSON.stringify(data, null, 2), "utf8");
 }
 
+async function clearAnalysisCache() {
+  try {
+    await rm(analysisFile, { force: true });
+  } catch {}
+}
+
 async function saveImport(data) {
-  const prepared = {
-    ...data,
-    importId: data.importId || randomUUID()
-  };
+  const prepared = { ...data, importId: data.importId || randomUUID() };
   await writeCurrentImport(prepared);
+  await clearAnalysisCache();
   await upsertImportHistory(prepared);
   return prepared;
 }
@@ -188,6 +192,20 @@ async function requireImport() {
   return current;
 }
 
+async function readAnalysisCache() {
+  try {
+    return JSON.parse(await readFile(analysisFile, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function writeAnalysisCache(cache) {
+  await mkdir(dataDir, { recursive: true });
+  await writeFile(analysisFile, JSON.stringify(cache, null, 2), "utf8");
+}
+
 async function discoverGroupConfiguration() {
   let available = [];
   try {
@@ -208,12 +226,12 @@ async function discoverGroupConfiguration() {
 
   const result = [];
   const seenJids = new Set();
-
   const primary = available.find(group => group.remoteJid === primaryGroupJid);
+
   result.push({
     name: primary?.name || primaryGroupName,
     jid: primaryGroupJid,
-    available: true
+    available: Boolean(primary || primaryGroupJid)
   });
   seenJids.add(primaryGroupJid);
 
@@ -230,7 +248,7 @@ async function discoverGroupConfiguration() {
   return result;
 }
 
-async function readMessages(days) {
+async function readMessages(days = 30) {
   const configured = await discoverGroupConfiguration();
   const groups = configured.filter(group => group.available && group.jid);
   const sinceUnix = Math.floor(Date.now() / 1000) - days * 86400;
@@ -254,52 +272,143 @@ async function readMessages(days) {
   return { configured, groups, messages: batches.flat() };
 }
 
-async function getAnalysis(days) {
-  const currentImport = await requireImport();
-  const { configured, groups, messages } = await readMessages(days);
-  const analysis = analyzeSpreadsheetReferences(messages, currentImport.references, { days });
-  const history = await recordAnalysis(currentImport, analysis, groups, days);
+function rebuildSummary(items) {
+  return items.reduce((acc, item) => {
+    acc[item.classification] = (acc[item.classification] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function viewForDays(full, requestedDays) {
+  const days = requestedDays === 20 ? 20 : 30;
+  if (days === 30) return { ...full, days: 30 };
+
+  const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
+  const items = (full.items || []).map(item => {
+    if (item.classification === "nao_localizada") return item;
+    if (Number(item.date || 0) >= cutoff) {
+      return {
+        ...item,
+        evidence: (item.evidence || []).filter(ev => !ev.timestamp || Number(ev.timestamp) >= cutoff)
+      };
+    }
+    return {
+      reference: item.reference,
+      classification: "nao_localizada",
+      confidence: "baixa",
+      match: null,
+      evidence: []
+    };
+  });
+
+  const summary = rebuildSummary(items);
+  const totalMatched = items.filter(item => item.classification !== "nao_localizada").length;
 
   return {
+    ...full,
+    days,
+    summary,
+    items,
+    totalMatched,
+    totalUnmatched: items.length - totalMatched
+  };
+}
+
+async function processAnalysis() {
+  const currentImport = await requireImport();
+  const { configured, groups, messages } = await readMessages(30);
+  const analysis = analyzeSpreadsheetReferences(messages, currentImport.references, { days: 30 });
+  const history = await recordAnalysis(currentImport, analysis, groups, 30);
+
+  const full = {
     groups,
     configuredGroups: configured,
     import: publicImportSummary(currentImport, { preview: 0 }),
     history,
-    ...analysis
+    ...analysis,
+    days: 30
   };
+
+  await writeAnalysisCache({
+    version: 1,
+    importId: currentImport.importId,
+    generatedAt: new Date().toISOString(),
+    full
+  });
+
+  return full;
+}
+
+async function getCachedAnalysis(days = 30, { processIfMissing = true } = {}) {
+  const currentImport = await requireImport();
+  const cache = await readAnalysisCache();
+
+  if (cache?.importId === currentImport.importId && cache?.full) {
+    return viewForDays(cache.full, days);
+  }
+
+  if (!processIfMissing) {
+    const error = new Error("A análise ainda não foi concluída.");
+    error.statusCode = 409;
+    error.code = "analysis_required";
+    throw error;
+  }
+
+  const full = await processAnalysis();
+  return viewForDays(full, days);
 }
 
 async function getPossiblyClosed(days) {
-  const currentImport = await requireImport();
-  const { configured, groups, messages } = await readMessages(days);
-  const result = findPossiblyClosed(messages, { days, references: currentImport.references });
-  await recordAnalysis(currentImport, result, groups, days);
+  const analysis = await getCachedAnalysis(days);
+  const items = (analysis.items || [])
+    .filter(item => item.classification === "possivelmente_realizada")
+    .sort((a, b) => Number(b.date || 0) - Number(a.date || 0));
 
   return {
-    groups,
-    configuredGroups: configured,
-    import: publicImportSummary(currentImport, { preview: 0 }),
-    ...result
+    ...analysis,
+    totalPossiblyClosed: items.length,
+    items
   };
 }
 
 async function getSummary() {
   const current = await getCurrentImport();
   if (!current) return { imported: false, counts: {} };
-  const history = await readHistory();
-  const currentHistory = history.find(item => item.id === current.importId) || null;
+
+  const cache = await readAnalysisCache();
+  if (cache?.importId !== current.importId || !cache?.full) {
+    return {
+      imported: true,
+      import: publicImportSummary(current, { preview: 0 }),
+      counts: {
+        imported: current.references?.length || 0,
+        analyzed: 0,
+        located: 0,
+        notLocated: 0,
+        possiblyClosed: 0,
+        pending: 0
+      },
+      lastAnalysis: null
+    };
+  }
+
+  const full = cache.full;
+  const summary = full.summary || {};
   return {
     imported: true,
     import: publicImportSummary(current, { preview: 0 }),
     counts: {
       imported: current.references?.length || 0,
-      analyzed: currentHistory?.totalAnalyzed || 0,
-      located: currentHistory?.totalMatched || 0,
-      notLocated: currentHistory?.totalUnmatched || 0,
-      possiblyClosed: currentHistory?.possiblyClosed || 0,
-      pending: currentHistory?.pendingOrReview || 0
+      analyzed: full.totalSpreadsheetOS || 0,
+      located: full.totalMatched || 0,
+      notLocated: full.totalUnmatched || 0,
+      possiblyClosed: Number(summary.possivelmente_realizada || 0),
+      pending:
+        Number(summary.possivelmente_pendente || 0) +
+        Number(summary.revisao_manual || 0) +
+        Number(summary.sem_evidencia || 0)
     },
-    lastAnalysis: currentHistory?.analyzedAt || null
+    lastAnalysis: cache.generatedAt || full.generatedAt || null
   };
 }
 
@@ -376,6 +485,10 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    if (url.pathname === "/api/analise/processar" && req.method === "POST") {
+      return json(res, 200, await processAnalysis());
+    }
+
     if (url.pathname === "/api/resumo" && req.method === "GET") {
       return json(res, 200, await getSummary());
     }
@@ -391,7 +504,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/api/analise" && req.method === "GET") {
       const requested = Number(url.searchParams.get("days") || 30);
       const days = requested === 20 ? 20 : 30;
-      return json(res, 200, await getAnalysis(days));
+      return json(res, 200, await getCachedAnalysis(days));
     }
 
     if (url.pathname === "/api/possivelmente-fechadas" && req.method === "GET") {
