@@ -201,6 +201,11 @@ function scoreReferenceAgainstRoot(ref, root) {
     score += 6; strong++; matchedFields.push("id");
   }
 
+  const cpf = digits(ref?.cpf);
+  if ((cpf.length === 11 || cpf.length === 14) && numbers.has(cpf)) {
+    score += 6; strong++; matchedFields.push("cpf");
+  }
+
   const login = normalize(ref?.login);
   if (login && login.length >= 3 && normalizedText.includes(login)) {
     score += 6; strong++; matchedFields.push("login");
