@@ -504,6 +504,8 @@ const staticFiles = new Map([
   ["/", ["index.html", "text/html; charset=utf-8"]],
   ["/index.html", ["index.html", "text/html; charset=utf-8"]],
   ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
+  ["/favicon.png", ["favicon.png", "image/png"]],
+  ["/assets/central-os-logo.png", ["assets/central-os-logo.png", "image/png"]],
   ["/ui.js", ["ui.js", "text/javascript; charset=utf-8"]],
   ["/local-api.js", ["local-api.js", "text/javascript; charset=utf-8"]],
   ["/global-import.js", ["global-import.js", "text/javascript; charset=utf-8"]],
