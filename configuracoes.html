@@ -7,69 +7,35 @@
   <title>Configurações • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="configuracoes" >
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link active" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Preferências</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Configuração ativa</span></div>
-      <div class="sidebar-card__message">Ajustes usados nas consultas e conferências da Central OS.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
         <span class="section-kicker">Preferências</span>
         <h1 class="page-title">Configurações</h1>
-        <p class="page-subtitle">Consulte as preferências usadas na análise das ordens de serviço.</p>
+        <p class="page-subtitle">Opções usadas na consulta e na conferência das ordens de serviço.</p>
       </div>
-      <div class="topbar__actions"><button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button></div>
+      <div class="topbar__actions">
+        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
+      </div>
     </section>
-
     <section class="content-columns">
-      <article class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Análise</span><h2>Preferências atuais</h2></div>
-          <span class="panel__badge">Ativas</span>
-        </div>
-        <div class="settings-stack settings-stack--spaced">
-          <div class="setting-row"><div><strong>Planilha como referência</strong><span>Somente as OS presentes na planilha entram na análise.</span></div><span class="switch on"></span></div>
-          <div class="setting-row"><div><strong>Consultar grupos</strong><span>Busca mensagens e respostas relacionadas às OS importadas.</span></div><span class="switch on"></span></div>
-          <div class="setting-row"><div><strong>Priorizar respostas diretas</strong><span>Respostas vinculadas à OS recebem maior relevância na conferência.</span></div><span class="switch on"></span></div>
-          <div class="setting-row"><div><strong>Conferência manual</strong><span>As classificações são apresentadas para revisão antes de qualquer decisão.</span></div><span class="switch on"></span></div>
-        </div>
-      </article>
-
-      <aside class="panel">
-        <div class="panel__header"><div><span class="panel__kicker">Período</span><h2>Janela de consulta</h2></div><span class="panel__badge info">20 / 30 dias</span></div>
-        <p class="page-subtitle">Escolha entre os últimos 20 ou 30 dias nas páginas de relatório e conferência.</p>
-        <div class="hero-actions"><a class="primary-button" href="/possivelmente-fechadas">Abrir conferência</a><a class="secondary-button" href="/relatorio">Ver relatório</a></div>
-      </aside>
-    </section>
-
-    <section class="panel config-groups-panel">
-      <div class="panel__header"><div><span class="panel__kicker">Grupos</span><h2>Fontes de contexto</h2></div><span class="panel__badge success">5 disponíveis</span></div>
-      <div class="config-chip-row">
-        <span class="meta-chip">TÉC.PLAY</span>
-        <span class="meta-chip">ORDEM DE SERVIÇO - PLAY SOLUÇÕES</span>
-        <span class="meta-chip">Rede Play</span>
-        <span class="meta-chip">O.S DIARIA</span>
-        <span class="meta-chip">ADMINISTRATIVO - PLAY SOLUÇÕES</span>
+    <article class="panel">
+      <div class="panel__header"><div><span class="panel__kicker">Análise</span><h2>Preferências atuais</h2></div><span class="panel__badge">Ativas</span></div>
+      <div class="settings-stack settings-stack--spaced">
+        <div class="setting-row"><div><strong>Planilha como referência</strong><span>Somente as OS presentes na planilha entram na análise.</span></div><span class="switch on"></span></div>
+        <div class="setting-row"><div><strong>Consultar grupos</strong><span>Busca mensagens e respostas relacionadas às OS importadas.</span></div><span class="switch on"></span></div>
+        <div class="setting-row"><div><strong>Priorizar respostas diretas</strong><span>Respostas vinculadas à OS recebem maior relevância.</span></div><span class="switch on"></span></div>
+        <div class="setting-row"><div><strong>Conferência manual</strong><span>As classificações são apresentadas para revisão.</span></div><span class="switch on"></span></div>
       </div>
-    </section>
-
+    </article>
+    <aside class="panel">
+      <div class="panel__header"><div><span class="panel__kicker">Período</span><h2>Janela de consulta</h2></div><span class="panel__badge info">20 / 30 dias</span></div>
+      <p class="page-subtitle">Escolha entre os últimos 20 ou 30 dias nas páginas detalhadas.</p>
+    </aside>
+  </section>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
