@@ -226,9 +226,11 @@ async function load(force = false) {
   } catch (error) {
     sourceItems = [];
     filteredItems = [];
-    if (error?.code === "spreadsheet_required") {
-      statusEl.textContent = "Planilha necessária";
-      bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><button class="primary-button" data-import-planilha type="button">Importar Planilha</button></div></td></tr>';
+    if (error?.code === "spreadsheet_required" || error?.code === "analysis_required") {
+      statusEl.textContent = error?.code === "analysis_required" ? "Análise necessária" : "Planilha necessária";
+      bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state"><b>' +
+        (error?.code === "analysis_required" ? "A análise desta planilha ainda não foi concluída." : "Importe uma planilha para continuar.") +
+        '</b><p>Use o botão Importar planilha para processar e organizar todos os resultados.</p><button class="primary-button" data-import-planilha type="button">Importar planilha</button></div></td></tr>';
       ensurePagination().hidden = true;
       return;
     }
