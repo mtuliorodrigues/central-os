@@ -3,7 +3,6 @@ const sidebar = document.querySelector("[data-autonav]");
 
 const navItems = [
   ["dashboard", "/", "⌂", "Dashboard"],
-  ["importar", "/importar-planilha", "⇧", "Importar Planilha"],
   ["analisadas", "/os-analisadas", "≡", "OS Analisadas"],
   ["localizadas", "/localizadas", "◎", "Localizadas nos Grupos"],
   ["nao-localizadas", "/nao-localizadas", "×", "Não Localizadas"],
@@ -18,24 +17,25 @@ const systemItems = [
 ];
 
 function navLink([key, href, icon, label]) {
-  return `<a class="nav-link ${page === key ? "active" : ""}" href="${href}"><span class="nav-link__icon">${icon}</span><span>${label}</span></a>`;
+  return `<a class="nav-link ${page === key ? "active" : ""}" href="${href}" title="${label}"><span class="nav-link__icon">${icon}</span><span class="nav-link__text">${label}</span></a>`;
 }
 
 if (sidebar) {
   sidebar.innerHTML = `
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
+    <a class="brand" href="/" title="Central OS">
+      <span class="brand__icon">OS</span>
+      <span class="brand__copy"><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span>
+    </a>
     <nav class="navigation">
       <div class="nav-label">Operação</div>
       ${navItems.map(navLink).join("")}
       <div class="nav-label nav-label--secondary">Sistema</div>
       ${systemItems.map(navLink).join("")}
     </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Central OS</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Operação disponível</span></div>
-      <div class="sidebar-card__message">A planilha define as OS; os grupos fornecem o contexto da análise.</div>
+    <div class="sidebar-agent" id="sidebarAgent" data-state="checking" title="Status do agente">
+      <span class="pulse-dot"></span>
+      <span class="sidebar-agent__text">Agente verificando</span>
     </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
   `;
 }
 
@@ -51,3 +51,38 @@ document.addEventListener("click", event => {
 });
 
 document.querySelectorAll(".nav-link").forEach(link => link.addEventListener("click", closeMenu));
+
+const currentSidebar = document.querySelector(".sidebar");
+if (currentSidebar) {
+  const setExpanded = expanded => document.body.classList.toggle("sidebar-expanded", expanded);
+  currentSidebar.addEventListener("mouseenter", () => setExpanded(true));
+  currentSidebar.addEventListener("mouseleave", () => setExpanded(false));
+  currentSidebar.addEventListener("focusin", () => setExpanded(true));
+  currentSidebar.addEventListener("focusout", event => {
+    if (!currentSidebar.contains(event.relatedTarget)) setExpanded(false);
+  });
+}
+
+async function updateAgentStatus() {
+  const status = document.getElementById("sidebarAgent");
+  if (!status) return;
+
+  const targets = location.hostname === "127.0.0.1" || location.hostname === "localhost"
+    ? ["/api/planilha/status", "http://127.0.0.1:8787/api/planilha/status"]
+    : ["http://127.0.0.1:8787/api/planilha/status"];
+
+  for (const target of targets) {
+    try {
+      const response = await fetch(target, { cache: "no-store" });
+      if (!response.ok) continue;
+      status.dataset.state = "online";
+      status.querySelector(".sidebar-agent__text").textContent = "Agente conectado";
+      return;
+    } catch {}
+  }
+
+  status.dataset.state = "offline";
+  status.querySelector(".sidebar-agent__text").textContent = "Agente indisponível";
+}
+
+updateAgentStatus();
