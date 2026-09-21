@@ -86,3 +86,5 @@ async function updateAgentStatus() {
 }
 
 updateAgentStatus();
+
+import("/global-import.js").catch(() => {});
