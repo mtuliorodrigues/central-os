@@ -227,7 +227,7 @@ async function load(force = false) {
       statusEl.textContent = error?.code === "analysis_required" ? "Análise necessária" : "Planilha necessária";
       bodyEl.innerHTML = '<tr><td colspan="6"><div class="empty-state"><b>' +
         (error?.code === "analysis_required" ? "A análise desta planilha ainda não foi concluída." : "Importe uma planilha para continuar.") +
-        '</b><p>Use o botão Importar planilha para processar e organizar todos os resultados.</p><button class="primary-button" data-import-planilha type="button">Importar planilha</button></div></td></tr>';
+        '</b><p>Volte ao Dashboard para importar e processar uma planilha.</p><a class="primary-button" href="/">Ir ao Dashboard</a></div></td></tr>';
       ensurePagination().hidden = true;
       return;
     }
