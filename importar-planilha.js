@@ -157,7 +157,10 @@ importButton.addEventListener("click", async () => {
     renderCurrent(data);
 
     try {
-      await localApiFetch("/api/analise?days=30");
+      const analysis = await localApiFetch("/api/analise/processar", { method: "POST" });
+      window.CentralOS?.data?.invalidate?.();
+      window.CentralOS?.data?.setAnalysis?.(30, analysis);
+      await window.CentralOS?.data?.getSummary?.({ force: true }).catch(() => null);
       importStatus.textContent = `Análise concluída. ${data.totalOS} OS foram processadas.`;
       importStatus.className = "inline-status is-success";
     } catch {
