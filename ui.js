@@ -2,6 +2,8 @@ let page = document.body.dataset.page || "dashboard";
 const sidebar = document.querySelector("[data-autonav]");
 let navigationCounter = 0;
 let navigating = false;
+const pageHtmlCache = new Map();
+let localApiModulePromise = null;
 
 const navItems = [
   ["dashboard", "/", "⌂", "Dashboard"],
@@ -50,7 +52,6 @@ function updateActiveNav() {
 
 renderSidebar();
 
-const menuButton = () => document.querySelector("[data-menu-toggle]");
 const closeMenu = () => document.body.classList.remove("menu-open");
 
 document.addEventListener("click", event => {
@@ -62,8 +63,7 @@ document.addEventListener("click", event => {
   }
 
   if (!document.body.classList.contains("menu-open")) return;
-  const currentSidebar = document.querySelector(".sidebar");
-  if (currentSidebar?.contains(event.target)) return;
+  if (document.querySelector(".sidebar")?.contains(event.target)) return;
   closeMenu();
 });
 
@@ -76,6 +76,59 @@ if (sidebar) {
     if (!sidebar.contains(event.relatedTarget)) setExpanded(false);
   });
 }
+
+async function localApi() {
+  if (!localApiModulePromise) localApiModulePromise = import("/local-api.js");
+  return localApiModulePromise;
+}
+
+const sharedData = {
+  analysis: new Map(),
+  summary: null,
+  history: null,
+  groups: null,
+
+  invalidate() {
+    this.analysis.clear();
+    this.summary = null;
+    this.history = null;
+    this.groups = null;
+  },
+
+  setAnalysis(days, data) {
+    this.analysis.set(Number(days) === 20 ? 20 : 30, data);
+  },
+
+  async getAnalysis(days = 30, { force = false } = {}) {
+    const normalized = Number(days) === 20 ? 20 : 30;
+    if (!force && this.analysis.has(normalized)) return this.analysis.get(normalized);
+    const { localApiFetch } = await localApi();
+    const data = await localApiFetch("/api/analise?days=" + normalized);
+    this.analysis.set(normalized, data);
+    return data;
+  },
+
+  async getSummary({ force = false } = {}) {
+    if (!force && this.summary) return this.summary;
+    const { localApiFetch } = await localApi();
+    this.summary = await localApiFetch("/api/resumo");
+    return this.summary;
+  },
+
+  async getHistory({ force = false } = {}) {
+    if (!force && this.history) return this.history;
+    const { localApiFetch } = await localApi();
+    this.history = await localApiFetch("/api/historico");
+    return this.history;
+  },
+
+  async getGroups({ force = false } = {}) {
+    if (!force && this.groups) return this.groups;
+    const { localApiFetch } = await localApi();
+    this.groups = await localApiFetch("/api/grupos");
+    return this.groups;
+  }
+};
 
 async function updateAgentStatus() {
   const status = document.getElementById("sidebarAgent");
@@ -111,6 +164,21 @@ function isSoftNavigable(anchor, event) {
   return true;
 }
 
+async function getPageHtml(url, { force = false } = {}) {
+  const key = url.pathname + url.search;
+  if (!force && pageHtmlCache.has(key)) return pageHtmlCache.get(key);
+
+  const response = await fetch(key, {
+    cache: "no-store",
+    headers: { "X-Central-OS-Navigation": "partial" }
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const html = await response.text();
+  pageHtmlCache.set(key, html);
+  return html;
+}
+
 async function runPageScripts(doc) {
   const scripts = [...doc.querySelectorAll("script[src]")]
     .map(script => new URL(script.getAttribute("src"), location.origin))
@@ -127,20 +195,14 @@ async function runPageScripts(doc) {
   }
 }
 
-async function softNavigate(target, { push = true } = {}) {
+async function softNavigate(target, { push = true, forceHtml = false } = {}) {
   if (navigating) return;
   const url = new URL(target, location.href);
   navigating = true;
   document.body.classList.add("page-changing");
 
   try {
-    const response = await fetch(url.pathname + url.search, {
-      cache: "no-store",
-      headers: { "X-Central-OS-Navigation": "partial" }
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const html = await response.text();
+    const html = await getPageHtml(url, { force: forceHtml });
     const doc = new DOMParser().parseFromString(html, "text/html");
     const nextMain = doc.querySelector("main.main");
     const currentMain = document.querySelector("main.main");
@@ -187,8 +249,24 @@ window.addEventListener("popstate", () => softNavigate(location.href, { push: fa
 
 window.CentralOS = {
   navigate: target => softNavigate(target),
-  refresh: () => softNavigate(location.href, { push: false })
+  refresh: () => softNavigate(location.href, { push: false }),
+  data: sharedData
 };
+
+function prefetchNavigation() {
+  const urls = [...navItems, ...systemItems].map(([, href]) => new URL(href, location.origin));
+  urls.forEach((url, index) => {
+    window.setTimeout(() => {
+      getPageHtml(url).catch(() => {});
+    }, 120 + index * 45);
+  });
+}
+
+if ("requestIdleCallback" in window) {
+  requestIdleCallback(prefetchNavigation, { timeout: 1500 });
+} else {
+  window.setTimeout(prefetchNavigation, 250);
+}
 
 updateAgentStatus();
 window.setInterval(updateAgentStatus, 60_000);
