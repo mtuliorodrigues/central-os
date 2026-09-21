@@ -2,6 +2,12 @@ import { localApiFetch } from "/local-api.js";
 
 const list = document.getElementById("groupsList");
 const badge = document.getElementById("groupsCount");
+const escapeHtml = value => String(value ?? "")
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
 
 async function load() {
   try {
@@ -11,7 +17,7 @@ async function load() {
     badge.textContent = available.length + " disponível(is)";
     list.innerHTML = groups.map(group =>
       '<article class="info-card group-card">' +
-        '<div class="info-card__top"><div><h3>' + group.name + '</h3>' +
+        '<div class="info-card__top"><div><h3>' + escapeHtml(group.name) + '</h3>' +
         '<p>' + (group.available ? "Disponível para consulta de contexto e evidências." : "Ainda não disponível nesta sessão.") + '</p></div>' +
         '<span class="panel__badge ' + (group.available ? "" : "warning") + '">' + (group.available ? "Disponível" : "Indisponível") + '</span></div>' +
       '</article>'
