@@ -7,107 +7,52 @@
   <title>Importar Planilha • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="importar" >
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link active" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Nova análise</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Planilha necessária</span></div>
-      <div class="sidebar-card__message">A planilha define quais ordens de serviço serão acompanhadas.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Primeiro passo</span>
+        <span class="section-kicker">Ordens de serviço</span>
         <h1 class="page-title">Importar Planilha</h1>
-        <p class="page-subtitle">Selecione a planilha com as ordens de serviço abertas. Ela será usada como referência em toda a análise.</p>
+        <p class="page-subtitle">Envie a planilha que define quais ordens serão analisadas.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
-        <a class="secondary-button" href="/">Voltar ao dashboard</a>
       </div>
     </section>
-
-    <section class="hero-panel">
-      <div class="hero-panel__row">
-        <div>
-          <span class="panel__kicker">Ordens de serviço</span>
-          <h2>Selecione a planilha</h2>
-          <p>Após a importação, a Central OS usará as linhas válidas do arquivo para consultar mensagens e evidências nos grupos configurados.</p>
-        </div>
-        <span id="engineBadge" class="panel__badge warning">Verificando disponibilidade</span>
+    <section class="dashboard-grid import-layout">
+    <article class="panel">
+      <div class="panel__header"><div><span class="panel__kicker">Arquivo</span><h2>Selecionar planilha</h2></div><span id="engineBadge" class="panel__badge warning">Verificando</span></div>
+      <label id="dropzone" class="upload-zone" for="spreadsheetFile">
+        <span class="upload-zone__icon">⇧</span>
+        <strong>Escolha ou arraste a planilha aqui</strong>
+        <span>Arquivo .xlsx ou .csv • até 15 MB</span>
+        <input id="spreadsheetFile" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
+      </label>
+      <div id="selectedFile" class="selected-file" hidden></div>
+      <div class="hero-actions"><button id="importButton" class="primary-button" type="button" disabled>Importar e iniciar análise</button></div>
+      <div id="importStatus" class="inline-status">Aguardando arquivo.</div>
+    </article>
+    <aside class="panel">
+      <div class="panel__header"><div><span class="panel__kicker">Planilha atual</span><h2>Referência ativa</h2></div><span id="currentBadge" class="panel__badge info">Consultando</span></div>
+      <div class="status-list">
+        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Arquivo</strong><small id="currentFile">—</small></div></div></div>
+        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Ordens de serviço</strong><small>Linhas válidas importadas</small></div></div><span id="currentCount" class="status-value">—</span></div>
+        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Importada em</strong><small id="currentDate">—</small></div></div></div>
       </div>
-    </section>
-
-    <section class="dashboard-grid">
-      <article class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Arquivo</span><h2>Importar</h2></div>
-          <span class="panel__badge">XLSX ou CSV</span>
-        </div>
-
-        <label id="dropzone" class="upload-zone" for="spreadsheetFile">
-          <span class="upload-zone__icon">⇧</span>
-          <strong>Escolha ou arraste a planilha aqui</strong>
-          <span>Arquivo .xlsx ou .csv • até 15 MB</span>
-          <input id="spreadsheetFile" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
-        </label>
-
-        <div id="selectedFile" class="selected-file" hidden></div>
-        <div class="hero-actions">
-          <button id="importButton" class="primary-button" type="button" disabled>Importar planilha</button>
-        </div>
-        <div id="importStatus" class="inline-status">Aguardando arquivo.</div>
-      </article>
-
-      <aside class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Planilha atual</span><h2>Referência ativa</h2></div>
-          <span id="currentBadge" class="panel__badge info">Consultando</span>
-        </div>
-        <div class="status-list">
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Arquivo</strong><small id="currentFile">—</small></div></div></div>
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Ordens de serviço</strong><small>Linhas válidas importadas</small></div></div><span id="currentCount" class="status-value">—</span></div>
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Importada em</strong><small id="currentDate">—</small></div></div></div>
-        </div>
-      </aside>
-    </section>
-
-    <section id="importResult" class="panel import-result" hidden>
-      <div class="panel__header">
-        <div><span class="panel__kicker">Planilha carregada</span><h2>Ordens reconhecidas</h2></div>
-        <span id="resultBadge" class="panel__badge">0 OS</span>
-      </div>
-      <div id="mapping" class="mapping-grid"></div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Linha</th><th>Cliente</th><th>CPF/CNPJ</th><th>OS / ID</th><th>Login</th><th>Serviço</th></tr></thead>
-          <tbody id="previewBody"></tbody>
-        </table>
-      </div>
-      <div class="hero-actions">
-        <a class="primary-button" href="/relatorio">Ver relatório</a>
-        <a class="secondary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a>
-      </div>
-    </section>
-
+    </aside>
+  </section>
+  <section id="importResult" class="panel import-result" hidden>
+    <div class="panel__header"><div><span class="panel__kicker">Prévia</span><h2>Ordens reconhecidas</h2></div><span id="resultBadge" class="panel__badge">0 OS</span></div>
+    <div id="mapping" class="mapping-grid"></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>Linha</th><th>Cliente</th><th>CPF/CNPJ</th><th>OS / ID</th><th>Login</th><th>Serviço</th></tr></thead><tbody id="previewBody"></tbody></table></div>
+    <div class="hero-actions"><a class="primary-button" href="/os-analisadas">Ver OS Analisadas</a><a class="secondary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a></div>
+  </section>
+  <script type="module" src="/importar-planilha.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
-<script type="module" src="/importar-planilha.js"></script>
 </body>
 </html>
