@@ -7,56 +7,25 @@
   <title>Grupos • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="grupos" >
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link active" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Grupos</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>5 disponíveis</span></div>
-      <div class="sidebar-card__message">Usados para localizar contexto e evidências das OS presentes na planilha.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
         <span class="section-kicker">Fontes de contexto</span>
         <h1 class="page-title">Grupos</h1>
-        <p class="page-subtitle">Os grupos não definem quais OS existem. Eles são consultados para encontrar mensagens, respostas e evidências relacionadas às OS da planilha.</p>
+        <p class="page-subtitle">Grupos usados para procurar mensagens e evidências relacionadas às ordens da planilha.</p>
       </div>
-      <div class="topbar__actions"><button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button></div>
-    </section>
-
-    <section class="hero-panel">
-      <div class="hero-panel__row">
-        <div>
-          <span class="panel__kicker">Consulta</span>
-          <h2>Grupos de acompanhamento</h2>
-          <p>A Central OS usa a planilha como origem das ordens e consulta estes grupos apenas para enriquecer o contexto de cada atendimento.</p>
-        </div>
-        <span class="panel__badge success">5 grupos</span>
+      <div class="topbar__actions">
+        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
       </div>
     </section>
-
-    <section class="group-grid">
-      <article class="info-card group-card"><div class="info-card__top"><div><h3>TÉC.PLAY</h3><p>Mensagens operacionais e atualizações dos atendimentos.</p></div><span class="panel__badge">Ativo</span></div></article>
-      <article class="info-card group-card"><div class="info-card__top"><div><h3>ORDEM DE SERVIÇO - PLAY SOLUÇÕES</h3><p>Referências e conversas relacionadas às ordens de serviço.</p></div><span class="panel__badge">Ativo</span></div></article>
-      <article class="info-card group-card"><div class="info-card__top"><div><h3>Rede Play</h3><p>Contexto de rede e informações relacionadas aos atendimentos.</p></div><span class="panel__badge">Ativo</span></div></article>
-      <article class="info-card group-card"><div class="info-card__top"><div><h3>O.S DIARIA</h3><p>Atualizações diárias e acompanhamento de ordens em andamento.</p></div><span class="panel__badge">Ativo</span></div></article>
-      <article class="info-card group-card"><div class="info-card__top"><div><h3>ADMINISTRATIVO - PLAY SOLUÇÕES</h3><p>Mensagens administrativas que podem complementar a conferência das OS.</p></div><span class="panel__badge">Ativo</span></div></article>
-    </section>
-
+    <section class="panel">
+    <div class="panel__header"><div><span class="panel__kicker">Disponibilidade</span><h2>Grupos configurados</h2></div><span id="groupsCount" class="panel__badge info">Consultando</span></div>
+    <div id="groupsList" class="group-grid"><div class="empty-state">Carregando grupos…</div></div>
+  </section>
+  <script type="module" src="/grupos.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
