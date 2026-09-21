@@ -248,7 +248,7 @@ function renderSnapshot(snapshot) {
   modalTitle.textContent = snapshot.fileName || "Detalhes da análise";
   modalSubtitle.textContent = formatDate(snapshot.analyzedAt || analysis.generatedAt) +
     " • " + n(analysis.totalSpreadsheetOS || detailItems.length) + " OS • " +
-    escapeHtml((snapshot.groups || []).join(", ") || "Grupos registrados");
+    ((snapshot.groups || []).join(", ") || "Grupos registrados");
 
   modalBody.innerHTML = `
     <section class="history-modal__stats">
