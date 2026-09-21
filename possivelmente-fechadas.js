@@ -48,19 +48,12 @@ function evidenceHtml(ev) {
 
 function itemHtml(item, absoluteIndex) {
   const ref = item.reference || {};
-  const idLabel = item.osNumber
-    ? "OS " + escapeHtml(item.osNumber)
-    : item.contractId
-      ? "ID/Contrato " + escapeHtml(item.contractId)
-      : escapeHtml(item.osIdentification || ref.osNumber || ref.contractId || "—");
-
   return [
     '<article class="os-card">',
       '<div class="os-card__head"><div>',
         '<span class="candidate-number">ORDEM ' + String(absoluteIndex + 1).padStart(2, "0") + '</span>',
         '<h3>' + escapeHtml(item.client || ref.client || "Cliente não identificado") + '</h3>',
         '<div class="meta-line">',
-          '<span>' + idLabel + '</span>',
           '<span>' + formatDate(item.date) + '</span>',
           item.sender ? '<span>Enviado por ' + escapeHtml(item.sender) + '</span>' : '',
           item.groupName ? '<span>' + escapeHtml(item.groupName) + '</span>' : '',
@@ -68,11 +61,11 @@ function itemHtml(item, absoluteIndex) {
         '</div>',
       '</div></div>',
 
-      '<div class="detail-grid">',
+      '<div class="detail-grid closed-detail-grid">',
         '<div><label>Cliente</label><p>' + escapeHtml(item.client || ref.client || "—") + '</p></div>',
-        '<div><label>Identificação</label><p>' + idLabel + '</p></div>',
-        '<div><label>Login</label><p>' + escapeHtml(item.login || ref.login || "—") + '</p></div>',
         '<div><label>Enviado por</label><p>' + escapeHtml(item.sender || "—") + '</p></div>',
+        '<div><label>Grupo</label><p>' + escapeHtml(item.groupName || "—") + '</p></div>',
+        '<div><label>Data</label><p>' + escapeHtml(formatDate(item.date)) + '</p></div>',
       '</div>',
 
       '<div class="description-box">',
@@ -169,7 +162,7 @@ function showSpreadsheetRequired() {
   el("closedCount").textContent = "0";
   statusEl.textContent = "Planilha necessária";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><button class="primary-button" data-import-planilha type="button">Importar Planilha</button></div>';
+  resultsEl.innerHTML = '<div class="empty-state"><b>Nenhuma análise disponível.</b><p>Volte ao Dashboard para importar e processar uma planilha.</p><a class="primary-button" href="/">Ir ao Dashboard</a></div>';
   ensurePagination().hidden = true;
 }
 
