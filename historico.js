@@ -198,18 +198,15 @@ function renderDetailTable() {
 
   tableBody.innerHTML = pageItems.length ? pageItems.map(item => {
     const ref = item.reference || {};
-    const identification = item.osNumber || item.contractId || ref.osNumber || ref.contractId || "—";
     return '<tr>' +
       '<td><strong>' + escapeHtml(item.client || ref.client || "—") + '</strong></td>' +
-      '<td>' + escapeHtml(identification) + '</td>' +
-      '<td>' + escapeHtml(item.login || ref.login || "—") + '</td>' +
       '<td>' + escapeHtml(item.sender || "—") + '</td>' +
       '<td>' + escapeHtml(formatDate(ref.date || item.date)) + '</td>' +
       '<td><span class="status-pill ' + statusClass(item.classification) + '">' + escapeHtml(statusLabel(item.classification)) + '</span></td>' +
       '<td>' + escapeHtml(item.groupName || "—") + '</td>' +
       '<td class="evidence-column">' + evidenceHtml(item) + '</td>' +
     '</tr>';
-  }).join("") : '<tr><td colspan="8"><div class="empty-state">Nenhuma OS encontrada neste filtro.</div></td></tr>';
+  }).join("") : '<tr><td colspan="6"><div class="empty-state">Nenhuma OS encontrada neste filtro.</div></td></tr>';
 
   pageLabel.textContent = filteredDetailItems.length
     ? "Página " + detailPage + " de " + totalPages + " • " + n(filteredDetailItems.length) + " OS"
@@ -228,8 +225,9 @@ function applyDetailFilters() {
 
     const ref = item.reference || {};
     const haystack = [
-      item.client, ref.client, item.osNumber, item.contractId, ref.osNumber, ref.contractId,
-      item.login, ref.login, item.sender, item.groupName, statusLabel(item.classification)
+      item.client, ref.client, item.sender, item.groupName,
+      ...(item.evidence || []).flatMap(ev => [ev.sender, ev.groupName, ev.text]),
+      statusLabel(item.classification)
     ].join(" ").toLowerCase();
     return haystack.includes(search);
   });
@@ -260,7 +258,7 @@ function renderSnapshot(snapshot) {
     </section>
 
     <section class="history-modal__filters">
-      <input id="historyDetailSearch" class="search-input" type="search" placeholder="Buscar cliente, ID, login, remetente ou grupo">
+      <input id="historyDetailSearch" class="search-input" type="search" placeholder="Buscar cliente, remetente, grupo ou evidência">
       <select id="historyDetailStatus">
         <option value="all">Todos os status</option>
         <option value="possivelmente_realizada">Possivelmente fechadas</option>
@@ -273,7 +271,7 @@ function renderSnapshot(snapshot) {
 
     <div class="history-modal__table-wrap">
       <table class="data-table history-detail-table">
-        <thead><tr><th>Cliente</th><th>OS / ID</th><th>Login</th><th>Enviado por</th><th>Data</th><th>Status</th><th>Grupo</th><th>Evidência</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Enviado por</th><th>Data</th><th>Status</th><th>Grupo</th><th>Evidência</th></tr></thead>
         <tbody id="historyDetailBody"></tbody>
       </table>
     </div>
