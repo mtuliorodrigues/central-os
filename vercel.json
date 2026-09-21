@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/importar-planilha", "destination": "/importar-planilha.html" },
+    { "source": "/importar-planilha", "destination": "/" },
     { "source": "/os-analisadas", "destination": "/os-analisadas.html" },
     { "source": "/localizadas", "destination": "/localizadas.html" },
     { "source": "/nao-localizadas", "destination": "/nao-localizadas.html" },
