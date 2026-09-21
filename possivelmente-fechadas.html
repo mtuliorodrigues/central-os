@@ -44,7 +44,23 @@
         </div>
       </div>
       <div class="list-summary"><span>Resumo das ordens</span><span id="agentStatus" class="status-badge loading">Carregando</span></div>
-      <div id="results" class="closed-list closed-summary-list"><div class="empty-state">Carregando análise…</div></div>
+      <div id="closedTableWrap" class="table-wrap analysis-table-wrap closed-table-wrap">
+        <table class="data-table closed-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Data</th>
+              <th>Grupo</th>
+              <th>Remetente</th>
+              <th>Status / confiança</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="results">
+            <tr><td colspan="6"><div class="empty-state">Carregando análise…</div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
     </div>
 
@@ -67,6 +83,6 @@
   </main>
 </div>
 <script src="/ui.js"></script>
-<script type="module" src="/possivelmente-fechadas.js?v=4"></script>
+<script type="module" src="/possivelmente-fechadas.js?v=5"></script>
 </body>
 </html>
