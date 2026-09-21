@@ -1,67 +1,96 @@
 # Central OS — V1
 
-Projeto separado para auditar o histórico de um grupo de WhatsApp e localizar indícios de OS que podem ter sido realizadas, mas continuam abertas no sistema.
+A Central OS usa uma planilha exportada do SGP como referência principal das ordens de serviço que devem ser analisadas. Depois, procura cada OS no histórico do grupo piloto **TÉC.PLAY**, relaciona o contexto e mostra evidências de conclusão, pendência ou necessidade de revisão.
 
-## O que a V1 faz
+## Fluxo atual
 
-- lê o histórico de um grupo pela Evolution API;
-- identifica mensagens que parecem representar uma OS;
-- reconhece metadados de resposta, encaminhamento e marcação/menção;
-- analisa mensagens próximas e respostas ligadas à OS;
-- procura indícios textuais de realização ou pendência;
-- classifica como `possivelmente_realizada`, `possivelmente_pendente`, `revisao_manual` ou `sem_evidencia`;
-- registra a evidência usada: ID da mensagem, horário, remetente, tipo de vínculo, texto e motivo;
-- grava cada execução em JSON dentro de `data/`.
+1. **Importar Planilha** — o usuário seleciona um arquivo `.xlsx` ou `.csv` dentro da própria plataforma.
+2. **Identificar a OS no grupo** — cada linha válida da planilha é procurada no histórico do TÉC.PLAY.
+3. **Relacionar contexto** — respostas diretas e mensagens próximas são relacionadas à OS localizada.
+4. **Classificar** — o motor procura indícios de conclusão, pendência ou conflito.
+5. **Mostrar evidências** — as mensagens usadas na classificação ficam disponíveis para conferência humana.
 
-A V1 é deliberadamente conservadora: ela **não fecha OS** e não transforma indício em fato. O resultado serve para conferência humana.
+A V1 **não fecha nenhuma OS automaticamente**.
 
-## Instalação
+## Importação da planilha
 
-Requer Node.js 18+ e uma instância já conectada da Evolution API.
+A página `/importar-planilha` aceita:
 
-1. `npm install`
-2. copie `.env.example` para `.env`
-3. informe URL, API key, instância e JID do grupo
-4. execute `npm start`
+- XLSX;
+- CSV;
+- arquivos de até 15 MB.
 
-## Configuração
+O importador tenta reconhecer cabeçalhos como:
 
-`EVOLUTION_BASE_URL` — URL da Evolution API  
-`EVOLUTION_API_KEY` — API key  
-`EVOLUTION_INSTANCE` — nome da instância  
-`SOURCE_GROUP_JID` — JID do grupo analisado  
-`HISTORY_LIMIT` — quantidade máxima de mensagens  
-`CONTEXT_BEFORE` / `CONTEXT_AFTER` — janela de contexto
+- Cliente;
+- CPF/CNPJ;
+- OS;
+- ID / Contrato;
+- Login;
+- Serviço / Plano;
+- Descrição;
+- Data.
 
-## Próxima etapa
+Linhas duplicadas são preservadas. A importação ativa fica armazenada localmente em `data/current-import.json`, arquivo ignorado pelo Git.
 
-Validar a estrutura real retornada pela versão da Evolution API instalada e calibrar as expressões com mensagens reais do grupo. Depois disso podemos adicionar correlação com a planilha de OS abertas sem misturar essa função com os outros projetos.
+O CPF permanece integralmente apenas no processamento local. Nas respostas de pré-visualização da interface ele é mascarado.
 
-## Possivelmente Fechadas
+## Páginas
 
-A página `/possivelmente-fechadas` é separada do relatório normal e foi criada para conferência de OS com indícios de conclusão.
+- `/` — Dashboard
+- `/importar-planilha` — Importação e pré-visualização da planilha
+- `/relatorio` — Resumo da análise das OS da planilha
+- `/possivelmente-fechadas` — OS da planilha com indícios de conclusão
+- `/grupos` — Grupos da Central OS
+- `/configuracoes` — Configuração visual do projeto
 
-Ela permite analisar os últimos **20 ou 30 dias** e mostra, por OS:
+## Execução local
 
-- cliente e identificação disponível;
-- data;
-- login e serviço quando presentes;
-- descrição completa;
-- mensagem original;
-- evidências relacionadas, remetente, horário e motivo da classificação.
-
-Para preservar os dados dos clientes, o histórico real **não é publicado no repositório nem embutido na Vercel**. O motor roda localmente no computador que possui a Evolution/PostgreSQL:
+Requer Node.js 18+ e a Evolution/PostgreSQL local já funcionando.
 
 ```powershell
 git pull
 npm install
-npm run web
+npm start
 ```
 
-Depois, acesse localmente:
+O painel local fica em:
 
 ```text
-http://127.0.0.1:8787/possivelmente-fechadas
+http://127.0.0.1:8787
 ```
 
-A V1 usa apenas o grupo piloto TÉC.PLAY. A classificação desta página é mais conservadora que a análise geral: mensagens que também parecem outra OS não são usadas como evidência de uma OS vizinha, e respostas diretamente vinculadas recebem prioridade.
+`npm run web` é mantido como alias do mesmo servidor.
+
+A análise antiga de histórico sem a planilha foi preservada em:
+
+```powershell
+npm run analyze:legacy
+```
+
+## Grupo piloto
+
+Nesta etapa, somente o TÉC.PLAY está ativo:
+
+```text
+553497702861-1601827551@g.us
+```
+
+## Arquitetura
+
+- Front-end estático publicado na Vercel;
+- motor local Node.js no computador operacional;
+- leitura do histórico diretamente no PostgreSQL da Evolution via Docker;
+- planilha processada localmente;
+- dados reais dos clientes não são embutidos no repositório nem na versão estática da Vercel.
+
+Ao abrir a versão publicada no mesmo computador do motor local, o front-end tenta acessar `http://127.0.0.1:8787` para importar a planilha e executar as análises.
+
+## Testes
+
+```powershell
+npm run check
+npm test
+```
+
+O repositório também possui CI no GitHub Actions para validar sintaxe e os testes básicos do fluxo planilha → WhatsApp → classificação.
