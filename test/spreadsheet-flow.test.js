@@ -100,3 +100,57 @@ test("OS da planilha sem correspondência fica como não localizada", () => {
   assert.equal(analysis.totalUnmatched, 1);
   assert.equal(analysis.items[0].classification, "nao_localizada");
 });
+
+test("mantém o grupo de origem e não mistura contexto entre grupos", () => {
+  const groupA = "111111111111@g.us";
+  const groupB = "222222222222@g.us";
+  const rootText = "*Cliente:* Cliente Grupo A\n*ID:* 45678\n*Login:* grupoa\n*Serviço:* Internet\n*Descrição:* Sem conexão";
+
+  const messages = [
+    {
+      __groupName: "TÉC.PLAY",
+      __groupJid: groupA,
+      key: { id: "root-a", remoteJid: groupA },
+      messageTimestamp: 2000,
+      message: { conversation: rootText }
+    },
+    {
+      __groupName: "Rede Play",
+      __groupJid: groupB,
+      key: { id: "other-b", remoteJid: groupB },
+      messageTimestamp: 2001,
+      message: { conversation: "foi feito" }
+    },
+    {
+      __groupName: "TÉC.PLAY",
+      __groupJid: groupA,
+      key: { id: "reply-a", remoteJid: groupA },
+      messageTimestamp: 2002,
+      message: {
+        extendedTextMessage: {
+          text: "cliente ok",
+          contextInfo: { stanzaId: "root-a", quotedMessage: { conversation: rootText } }
+        }
+      }
+    }
+  ];
+
+  const references = [{
+    rowNumber: 2,
+    client: "Cliente Grupo A",
+    cpf: "",
+    osNumber: "",
+    contractId: "45678",
+    login: "grupoa",
+    service: "Internet",
+    description: "Sem conexão",
+    date: ""
+  }];
+
+  const analysis = analyzeSpreadsheetReferences(messages, references, { days: 30 });
+  assert.equal(analysis.items[0].groupName, "TÉC.PLAY");
+  assert.equal(analysis.items[0].classification, "possivelmente_realizada");
+  assert.equal(analysis.items[0].evidence.length, 1);
+  assert.equal(analysis.items[0].evidence[0].groupName, "TÉC.PLAY");
+});
+
