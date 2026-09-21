@@ -99,6 +99,22 @@ const sharedData = {
     this.analysis.set(Number(days) === 20 ? 20 : 30, data);
   },
 
+  peekAnalysis(days = 30) {
+    return this.analysis.get(Number(days) === 20 ? 20 : 30) || null;
+  },
+
+  peekSummary() {
+    return this.summary;
+  },
+
+  peekHistory() {
+    return this.history;
+  },
+
+  peekGroups() {
+    return this.groups;
+  },
+
   async getAnalysis(days = 30, { force = false } = {}) {
     const normalized = Number(days) === 20 ? 20 : 30;
     if (!force && this.analysis.has(normalized)) return this.analysis.get(normalized);
