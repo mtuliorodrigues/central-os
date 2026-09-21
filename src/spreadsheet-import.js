@@ -56,7 +56,42 @@ function textValue(value) {
   return String(value).trim();
 }
 
+function countDelimiter(line, delimiter) {
+  let count = 0;
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (quoted && line[i + 1] === '"') {
+        i++;
+        continue;
+      }
+      quoted = !quoted;
+      continue;
+    }
+    if (ch === delimiter && !quoted) count++;
+  }
+  return count;
+}
+
+function detectCsvDelimiter(text) {
+  const lines = text.split(/\r?\n/).filter(line => line.trim()).slice(0, 8);
+  const candidates = [";", "\t", ","];
+  let best = { delimiter: ";", score: -1 };
+
+  for (const delimiter of candidates) {
+    const counts = lines.map(line => countDelimiter(line, delimiter)).filter(count => count > 0);
+    if (!counts.length) continue;
+    const common = counts.reduce((acc, value) => acc + value, 0) / counts.length;
+    const consistency = counts.length / Math.max(lines.length, 1);
+    const score = common * consistency;
+    if (score > best.score) best = { delimiter, score };
+  }
+  return best.delimiter;
+}
+
 function parseCsv(text) {
+  const delimiter = detectCsvDelimiter(text);
   const rows = [];
   let row = [];
   let cell = "";
@@ -75,7 +110,7 @@ function parseCsv(text) {
       quoted = !quoted;
       continue;
     }
-    if ((ch === "," || ch === ";" || ch === "\t") && !quoted) {
+    if (ch === delimiter && !quoted) {
       row.push(cell);
       cell = "";
       continue;
