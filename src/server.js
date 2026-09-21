@@ -329,11 +329,17 @@ async function processAnalysis() {
     days: 30
   };
 
+  const view20 = viewForDays(full, 20);
+
   await writeAnalysisCache({
-    version: 1,
+    version: 2,
     importId: currentImport.importId,
     generatedAt: new Date().toISOString(),
-    full
+    full,
+    views: {
+      "20": view20,
+      "30": full
+    }
   });
 
   return full;
@@ -344,7 +350,8 @@ async function getCachedAnalysis(days = 30, { processIfMissing = false } = {}) {
   const cache = await readAnalysisCache();
 
   if (cache?.importId === currentImport.importId && cache?.full) {
-    return viewForDays(cache.full, days);
+    const normalized = days === 20 ? 20 : 30;
+    return cache?.views?.[String(normalized)] || viewForDays(cache.full, normalized);
   }
 
   if (!processIfMissing) {
@@ -392,7 +399,7 @@ async function getSummary() {
     };
   }
 
-  const full = cache.full;
+  const full = cache?.views?.["30"] || cache.full;
   const summary = full.summary || {};
   return {
     imported: true,
