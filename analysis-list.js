@@ -94,17 +94,13 @@ function evidenceCell(item) {
 
 function rowHtml(item) {
   const ref = item.reference || {};
-  const identification = item.osNumber || item.contractId || ref.osNumber || ref.contractId || "—";
   const client = item.client || ref.client || "—";
-  const login = item.login || ref.login || "—";
   const sender = item.sender || "—";
   const date = ref.date || item.date;
   const group = item.groupName || "—";
 
   return '<tr>' +
     '<td><strong>' + escapeHtml(client) + '</strong></td>' +
-    '<td>' + escapeHtml(identification) + '</td>' +
-    '<td>' + escapeHtml(login) + '</td>' +
     '<td>' + escapeHtml(sender) + '</td>' +
     '<td>' + escapeHtml(formatDate(date)) + '</td>' +
     '<td><span class="status-pill ' + statusClass(item.classification) + '">' + escapeHtml(statusLabel(item.classification)) + '</span></td>' +
@@ -158,7 +154,7 @@ function renderPage() {
   countEl.textContent = filteredItems.length.toLocaleString("pt-BR") + " OS";
   bodyEl.innerHTML = pageItems.length
     ? pageItems.map(rowHtml).join("")
-    : '<tr><td colspan="8"><div class="empty-state">Nenhuma OS encontrada com esse filtro.</div></td></tr>';
+    : '<tr><td colspan="6"><div class="empty-state">Nenhuma OS encontrada com esse filtro.</div></td></tr>';
   renderPagination();
   tableWrap?.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -168,9 +164,8 @@ function applyFilter(resetPage = true) {
   filteredItems = query ? sourceItems.filter(item => {
     const ref = item.reference || {};
     const haystack = [
-      item.client, ref.client, item.osNumber, item.contractId, ref.osNumber, ref.contractId,
-      item.login, ref.login, item.sender, item.groupName,
-      ...(item.evidence || []).map(ev => ev.sender),
+      item.client, ref.client, item.sender, item.groupName,
+      ...(item.evidence || []).flatMap(ev => [ev.sender, ev.groupName, ev.text]),
       statusLabel(item.classification)
     ].join(" ").toLowerCase();
     return haystack.includes(query);
@@ -190,13 +185,11 @@ ensurePagination().addEventListener("click", event => {
 function loadingRows() {
   return Array.from({ length: 8 }, () =>
     '<tr class="skeleton-row">' +
+      '<td><span class="skeleton-block w-75"></span></td>' +
       '<td><span class="skeleton-block w-70"></span></td>' +
-      '<td><span class="skeleton-block w-50"></span></td>' +
-      '<td><span class="skeleton-block w-55"></span></td>' +
-      '<td><span class="skeleton-block w-80"></span></td>' +
       '<td><span class="skeleton-block w-60"></span></td>' +
       '<td><span class="skeleton-pill"></span></td>' +
-      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-75"></span></td>' +
       '<td><span class="skeleton-block w-90"></span></td>' +
     '</tr>'
   ).join("");
@@ -232,7 +225,7 @@ async function load(force = false) {
     filteredItems = [];
     if (error?.code === "spreadsheet_required" || error?.code === "analysis_required") {
       statusEl.textContent = error?.code === "analysis_required" ? "Análise necessária" : "Planilha necessária";
-      bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state"><b>' +
+      bodyEl.innerHTML = '<tr><td colspan="6"><div class="empty-state"><b>' +
         (error?.code === "analysis_required" ? "A análise desta planilha ainda não foi concluída." : "Importe uma planilha para continuar.") +
         '</b><p>Use o botão Importar planilha para processar e organizar todos os resultados.</p><button class="primary-button" data-import-planilha type="button">Importar planilha</button></div></td></tr>';
       ensurePagination().hidden = true;
@@ -240,7 +233,7 @@ async function load(force = false) {
     }
     statusEl.textContent = "Indisponível";
     statusEl.className = "panel__badge danger";
-    bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state error-state">Não foi possível atualizar a análise agora.</div></td></tr>';
+    bodyEl.innerHTML = '<tr><td colspan="6"><div class="empty-state error-state">Não foi possível atualizar a análise agora.</div></td></tr>';
     ensurePagination().hidden = true;
   }
 }
