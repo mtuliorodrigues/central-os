@@ -7,107 +7,40 @@
   <title>Dashboard • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="dashboard" >
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link active" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Status</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Central OS disponível</span></div>
-      <div class="sidebar-card__message">Importe a planilha para iniciar uma nova análise.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Central operacional</span>
+        <span class="section-kicker">Visão geral</span>
         <h1 class="page-title">Dashboard</h1>
-        <p class="page-subtitle">Acompanhe as ordens de serviço da planilha e consulte os indícios encontrados nas conversas dos grupos.</p>
+        <p class="page-subtitle">Resumo da análise atual das ordens de serviço.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
-        <a class="primary-button" href="/importar-planilha">Importar Planilha</a>
-        <a class="secondary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a>
       </div>
     </section>
-
-    <section class="hero-panel">
-      <div class="hero-panel__row">
-        <div>
-          <span class="panel__kicker">Visão geral</span>
-          <h2>Ordens de serviço em acompanhamento</h2>
-          <p>A planilha define quais OS serão analisadas. Os grupos configurados são consultados para localizar mensagens, respostas e evidências relacionadas a cada atendimento.</p>
-          <div class="hero-actions">
-            <a class="primary-button" href="/importar-planilha">Importar nova planilha</a>
-            <a class="secondary-button" href="/relatorio">Ver relatório</a>
-          </div>
-        </div>
-        <span class="panel__badge">Pronto para uso</span>
-      </div>
-    </section>
-
-    <section class="stats-grid">
-      <article class="stat-card success"><span class="stat-card__label">OS na planilha</span><b id="planilhaCount" class="stat-card__value">—</b><span id="planilhaState" class="stat-card__meta">Verificando referência atual</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Grupos consultados</span><b class="stat-card__value">5</b><span class="stat-card__meta">Fontes de contexto e evidências</span></article>
-      <article class="stat-card"><span class="stat-card__label">Período de consulta</span><b class="stat-card__value">20 / 30</b><span class="stat-card__meta">Dias retroativos selecionáveis</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Contexto</span><b class="stat-card__value stat-card__value--text">WhatsApp</b><span class="stat-card__meta">Mensagens e respostas relacionadas</span></article>
-      <article class="stat-card success"><span class="stat-card__label">Evidências</span><b class="stat-card__value stat-card__value--text">Ativas</b><span class="stat-card__meta">Conferência por mensagem relacionada</span></article>
-      <article class="stat-card warning"><span class="stat-card__label">Situação</span><b id="flowState" class="stat-card__value stat-card__value--text">Verificando</b><span id="flowMeta" class="stat-card__meta">Planilha necessária para iniciar</span></article>
-    </section>
-
-    <section class="dashboard-grid">
-      <article class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Acesso rápido</span><h2>Operação</h2></div>
-          <span class="panel__badge">Central OS</span>
-        </div>
-        <div class="quick-actions">
-          <a class="quick-action" href="/importar-planilha"><div class="quick-action__icon">⇧</div><strong>Importar Planilha</strong><span>Defina as OS que entrarão na análise.</span></a>
-          <a class="quick-action" href="/possivelmente-fechadas"><div class="quick-action__icon">✓</div><strong>Possivelmente Fechadas</strong><span>Confira OS com indícios de conclusão e veja as evidências.</span></a>
-          <a class="quick-action" href="/relatorio"><div class="quick-action__icon">≡</div><strong>Relatório</strong><span>Consulte o resultado consolidado da análise.</span></a>
-          <a class="quick-action" href="/grupos"><div class="quick-action__icon">◎</div><strong>Grupos</strong><span>Veja os grupos usados para buscar contexto e evidências.</span></a>
-        </div>
-      </article>
-
-      <article class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Acompanhamento</span><h2>Fluxo atual</h2></div>
-          <span class="panel__badge success">Ativo</span>
-        </div>
-        <div class="status-list">
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Planilha</strong><small>Define as OS que serão analisadas</small></div></div><span class="status-value">Referência</span></div>
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Grupos</strong><small>Fornecem mensagens, respostas e contexto</small></div></div><span class="status-value">Consulta</span></div>
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Conferência</strong><small>Exibe a evidência antes de qualquer decisão</small></div></div><span class="status-value">Manual</span></div>
-        </div>
-      </article>
-    </section>
-
-    <section class="panel flow-panel">
-      <div class="panel__header"><div><span class="panel__kicker">Fluxo</span><h2>Como a Central OS trabalha</h2></div></div>
-      <div class="flow-grid">
-        <div class="quick-action flow-step flow-step--source"><div class="quick-action__icon">01</div><strong>Importa a planilha</strong><span>A planilha define quais ordens de serviço serão analisadas.</span></div>
-        <div class="quick-action flow-step"><div class="quick-action__icon">02</div><strong>Consulta os grupos</strong><span>Procura mensagens e referências relacionadas às OS da planilha.</span></div>
-        <div class="quick-action flow-step"><div class="quick-action__icon">03</div><strong>Relaciona o contexto</strong><span>Reúne respostas e mensagens ligadas a cada atendimento.</span></div>
-        <div class="quick-action flow-step"><div class="quick-action__icon">04</div><strong>Classifica</strong><span>Aponta sinais de conclusão, pendência ou necessidade de revisão.</span></div>
-        <div class="quick-action flow-step"><div class="quick-action__icon">05</div><strong>Mostra a evidência</strong><span>Exibe as mensagens que sustentam cada classificação para conferência.</span></div>
-      </div>
-    </section>
-
+    <section class="stats-grid dashboard-summary">
+    <a class="stat-card success stat-link" href="/os-analisadas"><span class="stat-card__label">OS importadas</span><b id="importedCount" class="stat-card__value">—</b><span class="stat-card__meta">Ordens presentes na planilha</span></a>
+    <a class="stat-card info stat-link" href="/os-analisadas"><span class="stat-card__label">OS analisadas</span><b id="analyzedCount" class="stat-card__value">—</b><span class="stat-card__meta">Processadas na análise atual</span></a>
+    <a class="stat-card success stat-link" href="/localizadas"><span class="stat-card__label">Localizadas nos grupos</span><b id="locatedCount" class="stat-card__value">—</b><span class="stat-card__meta">Com mensagem correspondente</span></a>
+    <a class="stat-card danger stat-link" href="/nao-localizadas"><span class="stat-card__label">Não localizadas</span><b id="missingCount" class="stat-card__value">—</b><span class="stat-card__meta">Sem correspondência encontrada</span></a>
+    <a class="stat-card success stat-link" href="/possivelmente-fechadas"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Com indícios de conclusão</span></a>
+    <a class="stat-card warning stat-link" href="/pendentes"><span class="stat-card__label">Pendentes / Em análise</span><b id="pendingCount" class="stat-card__value">—</b><span class="stat-card__meta">Ainda sem evidência suficiente de fechamento</span></a>
+  </section>
+  <section class="dashboard-bottom">
+    <div>
+      <span class="panel__kicker">Referência atual</span>
+      <strong id="dashboardFile">Nenhuma planilha carregada</strong>
+      <span id="dashboardUpdated">Importe uma planilha para iniciar.</span>
+    </div>
+    <a class="primary-button" href="/importar-planilha">Importar Planilha</a>
+  </section>
+  <script type="module" src="/dashboard.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
-<script type="module" src="/dashboard.js"></script>
 </body>
 </html>
