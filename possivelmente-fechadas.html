@@ -21,19 +21,19 @@
       <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
     </nav>
     <div class="sidebar-card">
-      <div class="sidebar-card__label">Fluxo ativo</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Planilha → TÉC.PLAY</span></div>
-      <div class="sidebar-card__message">Somente OS presentes na planilha importada entram nesta conferência.</div>
+      <div class="sidebar-card__label">Conferência</div>
+      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Resultados disponíveis</span></div>
+      <div class="sidebar-card__message">Confira as evidências antes de considerar uma OS concluída.</div>
     </div>
-    <div class="sidebar-meta">Central OS • V1<br>Play Soluções</div>
+    <div class="sidebar-meta">Central OS • Play Soluções</div>
   </aside>
 
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Conferência de conclusão</span>
+        <span class="section-kicker">Conferência</span>
         <h1 class="page-title">Possivelmente Fechadas</h1>
-        <p class="page-subtitle">A Central OS procura no TÉC.PLAY apenas as OS presentes na planilha e mostra por que cada uma pode já ter sido concluída.</p>
+        <p class="page-subtitle">Revise as ordens da planilha que apresentam indícios de conclusão nas conversas dos grupos.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
@@ -45,36 +45,36 @@
     <section class="hero-panel">
       <div class="hero-panel__row">
         <div>
-          <span class="panel__kicker">Etapas 02 a 05</span>
-          <h2>Localizar, relacionar, classificar e provar</h2>
-          <p id="closedHeroText">A planilha é a referência. O grupo é usado para localizar cada OS, relacionar o contexto e encontrar evidências de conclusão.</p>
+          <span class="panel__kicker">Análise de conclusão</span>
+          <h2>Ordens que merecem conferência</h2>
+          <p id="closedHeroText">A planilha define as ordens analisadas. As conversas dos grupos são consultadas para encontrar mensagens e evidências relacionadas.</p>
         </div>
         <div class="filterbar">
           <label for="days">Período
             <select id="days"><option value="20">Últimos 20 dias</option><option value="30" selected>Últimos 30 dias</option></select>
           </label>
-          <button id="refresh" class="primary-button" type="button">Analisar</button>
+          <button id="refresh" class="primary-button" type="button">Atualizar análise</button>
         </div>
       </div>
     </section>
 
     <section class="summary-row">
-      <article class="stat-card info"><span class="stat-card__label">Período</span><b id="periodValue" class="stat-card__value">30 dias</b><span class="stat-card__meta">Janela retroativa</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Período</span><b id="periodValue" class="stat-card__value">30 dias</b><span class="stat-card__meta">Janela de consulta</span></article>
       <article class="stat-card"><span class="stat-card__label">OS na planilha</span><b id="spreadsheetCount" class="stat-card__value">—</b><span class="stat-card__meta">Referência principal</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Localizadas no grupo</span><b id="matchedCount" class="stat-card__value">—</b><span id="matchedMeta" class="stat-card__meta">Correspondência encontrada</span></article>
-      <article class="stat-card success"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Exigem conferência</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Localizadas nos grupos</span><b id="matchedCount" class="stat-card__value">—</b><span id="matchedMeta" class="stat-card__meta">Mensagens relacionadas encontradas</span></article>
+      <article class="stat-card success"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Aguardando conferência</span></article>
     </section>
 
     <section class="panel">
       <div class="panel-title-row">
-        <div><span class="panel__kicker">Conferência</span><h2 style="margin:6px 0 0">OS encontradas</h2></div>
-        <span id="agentStatus" class="status-badge loading">Conectando ao motor local…</span>
+        <div><span class="panel__kicker">Resultados</span><h2 style="margin:6px 0 0">Ordens encontradas</h2></div>
+        <span id="agentStatus" class="status-badge loading">Carregando análise…</span>
       </div>
-      <p class="muted">Cada card mostra a OS da planilha, a mensagem localizada no WhatsApp e as evidências que sustentaram a classificação. Nenhuma OS é alterada automaticamente.</p>
+      <p class="muted">Cada card mostra os dados da OS e as mensagens que sustentam a classificação.</p>
       <div id="results" class="closed-list"><div class="empty-state">Carregando análise…</div></div>
     </section>
 
-    <div class="footer">Central OS • Possivelmente Fechadas • Planilha como referência</div>
+    <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
