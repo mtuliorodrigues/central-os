@@ -2737,3 +2737,167 @@ body{overflow:hidden;font-size:17.5px}
   width:min(calc(100% - clamp(20px,2vw,44px)),3600px);
   max-width:3600px;
 }
+
+
+/* Refinamentos finais: menu, profundidade e gradientes contínuos */
+@media(min-width:821px){
+  .sidebar .nav-link{
+    height:50px;
+    min-width:50px;
+    padding:6px 6px;
+    gap:13px;
+  }
+  .sidebar .nav-link__icon{
+    width:38px;
+    height:38px;
+    flex:0 0 38px;
+    font-size:18px;
+  }
+  body.sidebar-expanded .navigation > .nav-label:first-child{
+    margin-top:9px;
+    margin-bottom:17px;
+  }
+  body.sidebar-expanded .nav-label{
+    font-size:11px;
+  }
+}
+
+/* Dashboard: reduz apenas a largura do card-base central; cabeçalho permanece intacto */
+@media(min-width:1500px){
+  .main > .page-surface--dashboard{
+    width:74%;
+  }
+}
+@media(min-width:1281px) and (max-width:1499px){
+  .main > .page-surface--dashboard{
+    width:82%;
+  }
+}
+@media(min-width:1121px) and (max-width:1280px){
+  .main > .page-surface--dashboard{
+    width:90%;
+  }
+}
+@media(max-width:1120px){
+  .main > .page-surface--dashboard{
+    width:100%;
+  }
+}
+
+/* Referência atual acima dos cards */
+.page-surface--dashboard .dashboard-bottom{
+  margin:0 0 18px;
+  flex:0 0 auto;
+}
+.page-surface--dashboard .dashboard-summary{
+  margin:0;
+}
+
+/* Gradiente dos títulos sempre na mesma direção */
+.page-title{
+  background-image:repeating-linear-gradient(
+    105deg,
+    #f4fff9 0%,
+    #c9ffea 9%,
+    #14d69a 19%,
+    #82f3c9 29%,
+    #f1fff9 39%,
+    #14d69a 49%,
+    #f4fff9 58%
+  );
+  background-size:200% 100%;
+  animation:titleGradient 8s linear infinite;
+}
+.page-title::after{
+  background:repeating-linear-gradient(
+    90deg,
+    var(--green) 0%,
+    #22c6df 18%,
+    rgba(20,214,154,.18) 36%,
+    var(--green) 50%
+  );
+  background-size:200% 100%;
+  animation:titleUnderlineFlow 6s linear infinite;
+}
+@keyframes titleGradient{
+  from{background-position:0% 50%}
+  to{background-position:200% 50%}
+}
+@keyframes titleUnderlineFlow{
+  from{background-position:0% 50%}
+  to{background-position:200% 50%}
+}
+
+/* Card-base com contorno neon animado e discreto */
+.page-surface{
+  isolation:isolate;
+  background:
+    radial-gradient(circle at 86% 4%,rgba(20,214,154,.052),transparent 30%),
+    linear-gradient(180deg,rgba(6,17,27,.90),rgba(4,12,19,.88));
+  border-color:rgba(20,214,154,.10);
+  box-shadow:
+    0 22px 64px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.025),
+    inset 0 0 34px rgba(20,214,154,.012);
+}
+.page-surface::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  padding:1px;
+  border-radius:inherit;
+  pointer-events:none;
+  background:repeating-linear-gradient(
+    90deg,
+    rgba(20,214,154,.05) 0%,
+    rgba(20,214,154,.34) 12%,
+    rgba(34,198,223,.22) 24%,
+    rgba(20,214,154,.06) 38%,
+    rgba(20,214,154,.05) 50%
+  );
+  background-size:200% 100%;
+  animation:surfaceBorderFlow 9s linear infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  opacity:.72;
+}
+@keyframes surfaceBorderFlow{
+  from{background-position:0% 50%}
+  to{background-position:200% 50%}
+}
+
+/* Profundidade sutil entre fundo, card-base, blocos e cards internos */
+.page-surface .dashboard-primary,
+.page-surface .dashboard-future,
+.page-surface > .panel,
+.page-surface > .content-columns > .panel{
+  background:
+    linear-gradient(180deg,rgba(10,25,38,.98),rgba(7,18,29,.98));
+  border-color:rgba(72,147,121,.20);
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.025),
+    0 0 22px rgba(20,214,154,.018);
+}
+.page-surface .stat-card,
+.page-surface .info-card,
+.page-surface .os-card{
+  background:
+    linear-gradient(180deg,rgba(13,31,45,.98),rgba(8,21,32,.99));
+  border-color:rgba(82,158,131,.22);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.03),
+    0 0 18px rgba(20,214,154,.015);
+}
+
+/* Labels dos cards mais fortes */
+.stat-card__label,
+.info-card h3,
+.panel__kicker{
+  font-weight:900;
+}
