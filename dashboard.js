@@ -12,18 +12,18 @@ async function loadSpreadsheetStatus() {
       count.textContent = Number(data.totalOS || 0).toLocaleString("pt-BR");
       state.textContent = data.fileName + " • referência ativa";
       flowState.textContent = "Pronto";
-      flowMeta.textContent = "Planilha carregada; análise liberada";
+      flowMeta.textContent = "Planilha carregada";
     } else {
       count.textContent = "0";
-      state.textContent = "Importe uma planilha para iniciar o fluxo";
+      state.textContent = "Importe uma planilha para iniciar";
       flowState.textContent = "Aguardando";
-      flowMeta.textContent = "Etapa 01 ainda não concluída";
+      flowMeta.textContent = "Nenhuma planilha importada";
     }
   } catch {
     count.textContent = "—";
-    state.textContent = "Motor local indisponível";
-    flowState.textContent = "Offline";
-    flowMeta.textContent = "Execute npm run web no computador operacional";
+    state.textContent = "Conexão indisponível";
+    flowState.textContent = "Indisponível";
+    flowMeta.textContent = "Abra a Central OS neste computador e tente novamente";
   }
 }
 
