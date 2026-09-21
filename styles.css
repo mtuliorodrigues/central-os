@@ -1090,3 +1090,124 @@ body{
   }
   .analysis-table-wrap{max-height:calc(100vh - 330px)}
 }
+
+
+/* Legibilidade final */
+body{font-size:15px}
+.page-title{font-size:clamp(38px,4vw,52px)}
+.page-subtitle{font-size:13px;line-height:1.6;max-width:760px}
+.section-kicker,.panel__kicker{font-size:11px}
+.panel__header h2,.panel-title-row h2{font-size:24px}
+.stat-card__label{font-size:11px}
+.stat-card__value{font-size:30px}
+.stat-card__value--text{font-size:23px}
+.stat-card__meta{font-size:11px;line-height:1.45}
+.nav-link{font-size:13px}
+.nav-label{font-size:10px}
+.sidebar-agent__text{font-size:12px}
+.primary-button,.secondary-button,.ghost-button,.icon-button{font-size:12px}
+.panel__badge,.status-badge{font-size:10px}
+.status-row strong{font-size:12px}
+.status-row small{font-size:10.5px}
+.status-value{font-size:12px}
+.data-table{font-size:12.5px}
+.data-table th{font-size:10.5px}
+.data-table td{font-size:12.5px;line-height:1.45}
+.inline-status{font-size:11.5px}
+.list-toolbar>div:first-child strong{font-size:15px}
+.search-input,.compact-select select{font-size:12px}
+.compact-select{font-size:9px}
+.list-summary{font-size:12px}
+.status-pill{font-size:10px}
+.table-details summary{font-size:11px}
+.evidence-preview strong{font-size:10px}
+.evidence-preview p{font-size:11.5px}
+.evidence-reason,.signal{font-size:11.5px}
+.evidence-item blockquote{font-size:12px}
+.os-card h3{font-size:20px}
+.meta-line{font-size:10.5px}
+.detail-grid label,.description-box label{font-size:9.5px}
+.detail-grid p,.description-box p{font-size:12px}
+
+/* Modal de processamento ampliado */
+.processing-modal__card{
+  width:min(560px,calc(100vw - 32px));
+  padding:36px 38px;
+  border-radius:25px;
+}
+.processing-spinner{
+  width:60px;
+  height:60px;
+  margin-bottom:18px;
+}
+.processing-spinner span{width:29px;height:29px;border-width:3px}
+.processing-modal__card h2{font-size:30px;margin:9px 0 6px}
+.processing-modal__file{font-size:12px;margin-bottom:22px}
+.processing-steps{gap:9px;margin-top:21px}
+.processing-steps>div{
+  min-height:44px;
+  gap:12px;
+  padding:10px 12px;
+  border-radius:12px;
+}
+.processing-steps>div span{
+  width:29px;
+  height:29px;
+  font-size:9px;
+}
+.processing-steps>div strong{font-size:12.5px}
+.processing-progress{height:7px;margin-top:22px}
+.processing-modal__status{font-size:12px;line-height:1.6;margin-top:12px}
+
+/* Skeletons de carregamento */
+.skeleton-row td{height:48px}
+.skeleton-block,.skeleton-pill{
+  display:block;
+  position:relative;
+  overflow:hidden;
+  border-radius:7px;
+  background:rgba(111,132,153,.10);
+}
+.skeleton-block{height:11px}
+.skeleton-pill{width:92px;height:24px;border-radius:999px}
+.skeleton-block::after,.skeleton-pill::after,.skeleton-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(129,239,200,.10),transparent);
+  animation:skeletonSweep 1.35s ease-in-out infinite;
+}
+.w-35{width:35%}.w-45{width:45%}.w-50{width:50%}.w-55{width:55%}.w-60{width:60%}.w-65{width:65%}.w-70{width:70%}.w-75{width:75%}.w-80{width:80%}.w-85{width:85%}.w-90{width:90%}.w-95{width:95%}
+.skeleton-card{position:relative;overflow:hidden;min-height:260px}
+.skeleton-card::after{pointer-events:none}
+.skeleton-title{height:24px;margin-top:13px}
+.skeleton-text{height:12px;margin-top:12px}
+.skeleton-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:18px;
+  margin:24px 0 18px;
+}
+@keyframes skeletonSweep{to{transform:translateX(100%)}}
+
+/* Troca de conteúdo sem piscar o menu */
+body.page-changing .main{opacity:.94}
+.main{transition:margin-left .24s ease,opacity .12s ease}
+
+@media(max-height:720px) and (min-width:821px){
+  .sidebar{padding-top:14px;padding-bottom:12px;gap:10px}
+  .brand__icon{width:40px;height:40px;flex-basis:40px}
+  .brand{min-height:40px}
+  .nav-link{height:36px;margin-bottom:2px;padding:3px 9px}
+  .nav-link__icon{width:28px;height:28px;flex-basis:28px}
+  .nav-label{margin:4px 0 4px}
+  .sidebar-agent{min-height:36px;padding:6px 11px}
+}
+
+@media(max-width:600px){
+  .page-title{font-size:36px}
+  .processing-modal__card{padding:28px 24px}
+  .processing-modal__card h2{font-size:26px}
+  .processing-steps>div strong{font-size:11.5px}
+}
