@@ -152,15 +152,19 @@ importButton.addEventListener("click", async () => {
       body: JSON.stringify({ fileName: file.name, dataBase64 })
     });
 
-    importStatus.textContent = `Planilha importada com sucesso. ${data.totalOS} OS serão usadas na análise.`;
-    importStatus.className = "inline-status is-success";
+    importStatus.textContent = `Planilha importada. Iniciando análise de ${data.totalOS} OS…`;
+    importStatus.className = "inline-status is-loading";
     renderCurrent(data);
+
+    await localApiFetch("/api/analise?days=30");
+    importStatus.textContent = `Análise concluída. ${data.totalOS} OS foram processadas.`;
+    importStatus.className = "inline-status is-success";
   } catch (error) {
     importStatus.textContent = error?.message || "Não foi possível importar a planilha.";
     importStatus.className = "inline-status is-error";
   } finally {
     importButton.disabled = false;
-    importButton.textContent = "Importar planilha";
+    importButton.textContent = "Importar e iniciar análise";
   }
 });
 
