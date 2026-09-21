@@ -43,9 +43,24 @@
           <button id="refresh" class="primary-button" type="button">Atualizar</button>
         </div>
       </div>
-      <div class="list-summary"><span>Detalhes e evidências</span><span id="agentStatus" class="status-badge loading">Carregando</span></div>
+      <div class="list-summary"><span>Resumo das ordens</span><span id="agentStatus" class="status-badge loading">Carregando</span></div>
       <div id="results" class="closed-list"><div class="empty-state">Carregando análise…</div></div>
     </section>
+    </div>
+
+    <div id="closedDetailModal" class="history-modal" hidden>
+      <div class="history-modal__backdrop" data-closed-close></div>
+      <section class="history-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="closedModalTitle">
+        <header class="history-modal__header">
+          <div>
+            <span class="panel__kicker">Possivelmente fechada</span>
+            <h2 id="closedModalTitle">Detalhes da OS</h2>
+            <p id="closedModalSubtitle">Informações completas da análise.</p>
+          </div>
+          <button class="history-modal__close" type="button" data-closed-close aria-label="Fechar">×</button>
+        </header>
+        <div id="closedModalBody" class="history-modal__body"></div>
+      </section>
     </div>
 
     <div class="footer">Central OS • Play Soluções</div>
