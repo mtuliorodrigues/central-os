@@ -4,7 +4,12 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/importar-planilha", "destination": "/importar-planilha.html" },
-    { "source": "/relatorio", "destination": "/relatorio.html" },
+    { "source": "/os-analisadas", "destination": "/os-analisadas.html" },
+    { "source": "/localizadas", "destination": "/localizadas.html" },
+    { "source": "/nao-localizadas", "destination": "/nao-localizadas.html" },
+    { "source": "/pendentes", "destination": "/pendentes.html" },
+    { "source": "/historico", "destination": "/historico.html" },
+    { "source": "/relatorio", "destination": "/os-analisadas.html" },
     { "source": "/possivelmente-fechadas", "destination": "/possivelmente-fechadas.html" },
     { "source": "/grupos", "destination": "/grupos.html" },
     { "source": "/configuracoes", "destination": "/configuracoes.html" }
