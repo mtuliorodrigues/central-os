@@ -3595,3 +3595,79 @@ body[data-page="dashboard"] .main > .topbar{
     width:100%;
   }
 }
+
+
+/* Correções pontuais — Dashboard e Possivelmente Fechadas */
+
+/* Dashboard: cabeçalho exclusivo centralizado e card-base compacto, sem alterar a largura atual. */
+body[data-page="dashboard"] .topbar{
+  justify-content:center;
+  margin-bottom:clamp(8px,1.2vh,12px);
+}
+body[data-page="dashboard"] .dashboard-brand-header{
+  width:100%;
+  margin:0 auto;
+  text-align:center;
+}
+body[data-page="dashboard"] .dashboard-brand-header .page-title,
+body[data-page="dashboard"] .dashboard-brand-header .page-subtitle{
+  margin-left:auto;
+  margin-right:auto;
+  text-align:center;
+}
+body[data-page="dashboard"] .dashboard-brand-header .page-subtitle{
+  margin-top:6px;
+  font-weight:800;
+  letter-spacing:.16em;
+}
+@media(min-width:821px){
+  body[data-page="dashboard"] .main > .page-surface--dashboard{
+    flex:0 1 auto;
+    min-height:0;
+    margin-top:0;
+    margin-bottom:0;
+    padding-top:clamp(18px,1.6vw,30px);
+    padding-bottom:clamp(18px,1.6vw,30px);
+    overflow:hidden;
+  }
+  body[data-page="dashboard"] .page-surface--dashboard .dashboard-layout{
+    height:auto;
+    min-height:0;
+    align-content:start;
+  }
+}
+@media(max-height:780px) and (min-width:821px){
+  body[data-page="dashboard"] .main > .page-surface--dashboard{
+    padding-top:14px;
+    padding-bottom:14px;
+  }
+  body[data-page="dashboard"] .page-surface--dashboard .dashboard-primary,
+  body[data-page="dashboard"] .page-surface--dashboard .dashboard-future{
+    padding-top:16px;
+    padding-bottom:16px;
+  }
+  body[data-page="dashboard"] .page-surface--dashboard .dashboard-bottom{
+    margin-bottom:12px;
+  }
+}
+
+/* Possivelmente Fechadas: garante que a listagem principal contenha apenas o resumo. */
+body[data-page="fechadas"] .closed-list .closed-summary-card{
+  display:flex;
+}
+body[data-page="fechadas"] .closed-list .detail-grid,
+body[data-page="fechadas"] .closed-list .description-box,
+body[data-page="fechadas"] .closed-list .original-message,
+body[data-page="fechadas"] .closed-list .evidence-section{
+  display:none!important;
+}
+body[data-page="fechadas"] .history-modal .detail-grid,
+body[data-page="fechadas"] .history-modal .description-box,
+body[data-page="fechadas"] .history-modal .original-message,
+body[data-page="fechadas"] .history-modal .evidence-section{
+  display:grid;
+}
+body[data-page="fechadas"] .history-modal .original-message,
+body[data-page="fechadas"] .history-modal .evidence-section{
+  display:block;
+}
