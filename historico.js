@@ -7,15 +7,19 @@ const modal = document.getElementById("historyDetailModal");
 const modalTitle = document.getElementById("historyModalTitle");
 const modalSubtitle = document.getElementById("historyModalSubtitle");
 const modalBody = document.getElementById("historyModalBody");
+const historyPageSizeEl = document.getElementById("historyPageSize");
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20];
+const savedPageSize = Number(localStorage.getItem("centralOSPageSize") || 10);
 
-const PAGE_SIZE = 10;
-const DETAIL_PAGE_SIZE = 12;
-
+let pageSize = PAGE_SIZE_OPTIONS.includes(savedPageSize) ? savedPageSize : 10;
+let detailPageSize = pageSize;
 let historyItems = [];
 let currentPage = 1;
 let detailItems = [];
 let filteredDetailItems = [];
 let detailPage = 1;
+
+if (historyPageSizeEl) historyPageSizeEl.value = String(pageSize);
 
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
@@ -73,7 +77,7 @@ function ensurePagination() {
 
 function renderPagination() {
   const pagination = ensurePagination();
-  const totalPages = Math.max(1, Math.ceil(historyItems.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(historyItems.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   if (totalPages <= 1) {
@@ -102,8 +106,8 @@ function renderPagination() {
 }
 
 function renderPage() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageItems = historyItems.slice(start, start + PAGE_SIZE);
+  const start = (currentPage - 1) * pageSize;
+  const pageItems = historyItems.slice(start, start + pageSize);
 
   badge.textContent = historyItems.length + " registro(s)";
   body.innerHTML = pageItems.length ? pageItems.map(item => '<tr class="history-row" data-history-id="' + escapeHtml(item.id) + '">' +
@@ -191,10 +195,10 @@ function renderDetailTable() {
   const next = document.getElementById("historyDetailNext");
   if (!tableBody) return;
 
-  const totalPages = Math.max(1, Math.ceil(filteredDetailItems.length / DETAIL_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredDetailItems.length / detailPageSize));
   detailPage = Math.min(Math.max(detailPage, 1), totalPages);
-  const start = (detailPage - 1) * DETAIL_PAGE_SIZE;
-  const pageItems = filteredDetailItems.slice(start, start + DETAIL_PAGE_SIZE);
+  const start = (detailPage - 1) * detailPageSize;
+  const pageItems = filteredDetailItems.slice(start, start + detailPageSize);
 
   tableBody.innerHTML = pageItems.length ? pageItems.map(item => {
     const ref = item.reference || {};
@@ -267,6 +271,9 @@ function renderSnapshot(snapshot) {
         <option value="sem_evidencia">Sem evidência</option>
         <option value="nao_localizada">Não localizadas</option>
       </select>
+      <label class="compact-select history-detail-page-size">Por página
+        <select id="historyDetailPageSize"><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select>
+      </label>
     </section>
 
     <div class="history-modal__table-wrap">
@@ -283,8 +290,19 @@ function renderSnapshot(snapshot) {
     </footer>
   `;
 
+  const detailPageSizeEl = document.getElementById("historyDetailPageSize");
+  if (detailPageSizeEl) detailPageSizeEl.value = String(detailPageSize);
   document.getElementById("historyDetailSearch")?.addEventListener("input", applyDetailFilters);
   document.getElementById("historyDetailStatus")?.addEventListener("change", applyDetailFilters);
+  detailPageSizeEl?.addEventListener("change", () => {
+    const next = Math.min(20, Math.max(5, Number(detailPageSizeEl.value || 10)));
+    detailPageSize = PAGE_SIZE_OPTIONS.includes(next) ? next : 10;
+    localStorage.setItem("centralOSPageSize", String(detailPageSize));
+    pageSize = detailPageSize;
+    if (historyPageSizeEl) historyPageSizeEl.value = String(pageSize);
+    detailPage = 1;
+    renderDetailTable();
+  });
   document.getElementById("historyDetailPrev")?.addEventListener("click", () => {
     if (detailPage > 1) {
       detailPage--;
@@ -292,7 +310,7 @@ function renderSnapshot(snapshot) {
     }
   });
   document.getElementById("historyDetailNext")?.addEventListener("click", () => {
-    const totalPages = Math.max(1, Math.ceil(filteredDetailItems.length / DETAIL_PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(filteredDetailItems.length / detailPageSize));
     if (detailPage < totalPages) {
       detailPage++;
       renderDetailTable();
@@ -319,6 +337,15 @@ async function openDetails(id) {
       '</p></div>';
   }
 }
+
+historyPageSizeEl?.addEventListener("change", () => {
+  const next = Math.min(20, Math.max(5, Number(historyPageSizeEl.value || 10)));
+  pageSize = PAGE_SIZE_OPTIONS.includes(next) ? next : 10;
+  detailPageSize = pageSize;
+  localStorage.setItem("centralOSPageSize", String(pageSize));
+  currentPage = 1;
+  renderPage();
+});
 
 ensurePagination().addEventListener("click", event => {
   const button = event.target.closest("button[data-page]");
