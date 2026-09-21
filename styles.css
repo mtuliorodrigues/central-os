@@ -809,9 +809,7 @@ body{
     overflow:hidden;
     transition:width .24s ease,padding .24s ease,box-shadow .24s ease;
   }
-  body.sidebar-expanded .sidebar,
-  .sidebar:hover,
-  .sidebar:focus-within{
+  body.sidebar-expanded .sidebar{
     width:280px;
     padding-left:20px;
     padding-right:20px;
@@ -846,13 +844,7 @@ body{
   }
   body.sidebar-expanded .brand__copy,
   body.sidebar-expanded .nav-link__text,
-  body.sidebar-expanded .sidebar-agent__text,
-  .sidebar:hover .brand__copy,
-  .sidebar:hover .nav-link__text,
-  .sidebar:hover .sidebar-agent__text,
-  .sidebar:focus-within .brand__copy,
-  .sidebar:focus-within .nav-link__text,
-  .sidebar:focus-within .sidebar-agent__text{
+  body.sidebar-expanded .sidebar-agent__text{
     opacity:1;
     transform:none;
   }
@@ -865,9 +857,7 @@ body{
     opacity:.55;
     border-top:1px solid rgba(255,255,255,.08);
   }
-  body.sidebar-expanded .nav-label,
-  .sidebar:hover .nav-label,
-  .sidebar:focus-within .nav-label{
+  body.sidebar-expanded .nav-label{
     height:auto;
     margin:7px 0 8px 12px;
     border-top:0;
@@ -1332,3 +1322,50 @@ body.page-changing .main{opacity:.97}
   .processing-modal__card h2{font-size:28px}
   .processing-steps>div strong{font-size:12.5px}
 }
+
+
+/* Legibilidade reforçada */
+body{font-size:16px}
+.brand__text{font-size:26px}
+.brand__sub{font-size:11px}
+.nav-link{font-size:15px}
+.nav-label{font-size:11px}
+.sidebar-agent__text{font-size:13px}
+.page-title{font-size:clamp(42px,4.4vw,56px)}
+.page-subtitle{font-size:15px;line-height:1.65}
+.section-kicker,.panel__kicker{font-size:12px}
+.panel__header h2,.panel-title-row h2{font-size:26px}
+.panel__header h3{font-size:20px}
+.stat-card__label{font-size:12px}
+.stat-card__value{font-size:36px}
+.stat-card__meta{font-size:13px}
+.info-card h3{font-size:16px}
+.info-card p{font-size:13.5px}
+.primary-button,.secondary-button,.ghost-button,.icon-button{font-size:13.5px}
+.panel__badge,.status-badge{font-size:11px}
+.status-row strong{font-size:14px}
+.status-row small{font-size:12px}
+.status-value{font-size:13.5px}
+.data-table{font-size:14.5px}
+.data-table th{font-size:12px}
+.data-table td{font-size:14.5px;line-height:1.5}
+.search-input,.compact-select select,.filterbar select{font-size:14px}
+.compact-select,.filterbar label{font-size:10.5px}
+.inline-status{font-size:13px}
+.list-toolbar>div:first-child strong{font-size:17px}
+.list-summary{font-size:13.5px}
+.status-pill{font-size:11.5px}
+.pagination button{font-size:12.5px;min-width:40px;height:40px}
+.pagination__ellipsis{font-size:13px}
+.muted{font-size:13.5px!important}
+.table-details summary{font-size:12.5px}
+.evidence-preview strong{font-size:11px}
+.evidence-preview p{font-size:13px}
+.meta-line span,.confidence{font-size:11px}
+.detail-grid label,.description-box label{font-size:10.5px}
+.detail-grid p,.description-box p{font-size:13px}
+.original-message summary{font-size:12px}
+.original-message pre{font-size:11.5px}
+.evidence-meta{font-size:11px}
+.evidence-reason,.signal{font-size:12.5px!important}
+.evidence-item blockquote{font-size:13px}
