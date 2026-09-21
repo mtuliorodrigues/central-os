@@ -36,3 +36,32 @@ Requer Node.js 18+ e uma instância já conectada da Evolution API.
 ## Próxima etapa
 
 Validar a estrutura real retornada pela versão da Evolution API instalada e calibrar as expressões com mensagens reais do grupo. Depois disso podemos adicionar correlação com a planilha de OS abertas sem misturar essa função com os outros projetos.
+
+## Possivelmente Fechadas
+
+A página `/possivelmente-fechadas` é separada do relatório normal e foi criada para conferência de OS com indícios de conclusão.
+
+Ela permite analisar os últimos **20 ou 30 dias** e mostra, por OS:
+
+- cliente e identificação disponível;
+- data;
+- login e serviço quando presentes;
+- descrição completa;
+- mensagem original;
+- evidências relacionadas, remetente, horário e motivo da classificação.
+
+Para preservar os dados dos clientes, o histórico real **não é publicado no repositório nem embutido na Vercel**. O motor roda localmente no computador que possui a Evolution/PostgreSQL:
+
+```powershell
+git pull
+npm install
+npm run web
+```
+
+Depois, acesse localmente:
+
+```text
+http://127.0.0.1:8787/possivelmente-fechadas
+```
+
+A V1 usa apenas o grupo piloto TÉC.PLAY. A classificação desta página é mais conservadora que a análise geral: mensagens que também parecem outra OS não são usadas como evidência de uma OS vizinha, e respostas diretamente vinculadas recebem prioridade.
