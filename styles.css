@@ -1766,3 +1766,218 @@ body.history-modal-open{overflow:hidden}
   .closed-detail-grid{grid-template-columns:1fr}
   .page-title{font-size:40px}
 }
+
+
+/* Refinamento de layout — títulos à esquerda, conteúdo controlado e tabelas fixas */
+.main{
+  padding-left:clamp(26px,3vw,52px);
+  padding-right:clamp(26px,3vw,52px);
+}
+.main > .topbar{
+  width:100%;
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+  text-align:left;
+}
+.main > .topbar > div:first-child{
+  margin-left:0;
+  margin-right:auto;
+  text-align:left;
+}
+.main > section:not(.topbar),
+.main > .footer{
+  width:min(100%,1280px);
+  margin-left:auto;
+  margin-right:auto;
+}
+.page-title,
+.page-subtitle,
+.section-kicker{
+  text-align:left;
+}
+
+/* Tipografia das listagens */
+.data-table{
+  font-size:16px;
+}
+.data-table th{
+  font-size:13.5px;
+  padding:14px 15px;
+}
+.data-table td{
+  font-size:16px;
+  line-height:1.55;
+  padding:15px;
+}
+.data-table td:first-child strong{
+  font-size:16.5px;
+}
+.search-input,
+.compact-select select,
+.filterbar select{
+  font-size:15px;
+}
+.compact-select,
+.filterbar label{
+  font-size:11.5px;
+}
+.status-pill{
+  font-size:13px;
+  padding:7px 11px;
+}
+.panel__badge,
+.status-badge{
+  font-size:12px;
+}
+.table-details summary{
+  font-size:13.5px;
+}
+.evidence-preview strong{
+  font-size:12px;
+}
+.evidence-preview p{
+  font-size:14.5px;
+  line-height:1.6;
+}
+.pagination button{
+  min-width:44px;
+  height:42px;
+  font-size:14px;
+}
+.pagination__ellipsis{
+  font-size:15px;
+}
+
+/* Área fixa para tabelas/listagens */
+.detail-panel{
+  height:min(690px,calc(100dvh - 215px));
+  min-height:500px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.detail-panel .list-toolbar,
+.detail-panel .panel__header,
+.detail-panel .list-summary,
+.detail-panel .pagination{
+  flex:0 0 auto;
+}
+.analysis-table-wrap,
+.history-table-wrap{
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  max-height:none;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.analysis-table thead th,
+.history-table thead th,
+.history-detail-table thead th{
+  position:sticky;
+  top:0;
+  z-index:3;
+  background:#0a1824;
+  box-shadow:0 1px 0 rgba(255,255,255,.06);
+}
+.analysis-table{
+  min-width:1020px;
+}
+.analysis-table th:nth-child(1){min-width:220px}
+.analysis-table th:nth-child(2){min-width:180px}
+.analysis-table th:nth-child(3){min-width:150px}
+.analysis-table th:nth-child(4){min-width:180px}
+.analysis-table th:nth-child(5){min-width:180px}
+.analysis-table th:nth-child(6){min-width:300px}
+
+/* Paginação permanece fora da rolagem da tabela */
+.detail-panel .pagination{
+  margin-top:13px;
+  min-height:42px;
+}
+.history-header-actions{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+}
+
+/* Possivelmente fechadas: lista com altura controlada */
+.closed-panel{
+  height:min(710px,calc(100dvh - 300px));
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.closed-panel .list-toolbar,
+.closed-panel .list-summary,
+.closed-panel .pagination{
+  flex:0 0 auto;
+}
+.closed-panel .closed-list{
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  max-height:none;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.closed-panel .pagination{
+  margin-top:13px;
+}
+
+/* Histórico detalhado também usa rolagem interna */
+.history-modal__body{
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.history-modal__stats,
+.history-modal__filters,
+.history-modal__pagination{
+  flex:0 0 auto;
+}
+.history-modal__table-wrap{
+  flex:1 1 auto;
+  min-height:260px;
+  max-height:none;
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+.history-detail-page-size{
+  min-width:92px;
+}
+
+/* Em telas menores, preserva responsividade sem estourar a página */
+@media(max-width:1180px){
+  .main > section:not(.topbar),
+  .main > .footer{
+    width:100%;
+  }
+}
+@media(max-width:820px){
+  .main{
+    padding-left:20px;
+    padding-right:20px;
+  }
+  .detail-panel,
+  .closed-panel{
+    height:auto;
+    min-height:0;
+    max-height:none;
+  }
+  .analysis-table-wrap,
+  .history-table-wrap,
+  .closed-panel .closed-list{
+    height:min(58vh,560px);
+    flex:none;
+  }
+  .history-modal__body{
+    overflow:auto;
+    display:block;
+  }
+  .history-modal__table-wrap{
+    max-height:54vh;
+  }
+}
