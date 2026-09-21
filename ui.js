@@ -8,7 +8,7 @@ let localApiModulePromise = null;
 const navItems = [
   ["dashboard", "/", "⌂", "Dashboard"],
   ["analisadas", "/os-analisadas", "≡", "OS Analisadas"],
-  ["localizadas", "/localizadas", "◎", "Localizadas nos Grupos"],
+  ["localizadas", "/localizadas", "◎", "Localizadas Grupos"],
   ["nao-localizadas", "/nao-localizadas", "×", "Não Localizadas"],
   ["fechadas", "/possivelmente-fechadas", "✓", "Possivelmente Fechadas"],
   ["pendentes", "/pendentes", "◷", "Pendentes / Em análise"],
