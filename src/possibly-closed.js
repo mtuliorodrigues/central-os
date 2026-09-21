@@ -39,6 +39,8 @@ function ctxOf(m) {
 function idOf(m) { return m?.key?.id || m?.id || ""; }
 function tsOf(m) { return Number(m?.messageTimestamp || m?.timestamp || 0); }
 function senderOf(m) { return m?.pushName || m?.key?.participant || m?.participant || "Desconhecido"; }
+function groupNameOf(m) { return m?.__groupName || "Grupo"; }
+function groupJidOf(m) { return m?.__groupJid || m?.key?.remoteJid || ""; }
 
 function quotedText(ctx) {
   const q = ctx?.quotedMessage || {};
@@ -163,6 +165,7 @@ function evidenceOf(m, root, reason, signal = null) {
     messageId: idOf(m),
     timestamp: tsOf(m),
     sender: senderOf(m),
+    groupName: groupNameOf(m),
     relation: relationTo(root, m),
     text: textOf(m),
     signal,
@@ -263,11 +266,13 @@ function findBestRoot(reference, roots) {
 function analyzeMatchedRoot(ordered, root, { maxAdjacent = 8, maxAdjacentMinutes = 20 } = {}) {
   const rootId = idOf(root);
   const rootTs = tsOf(root);
-  const rootIndex = ordered.indexOf(root);
-  const nextRootIndex = ordered.findIndex((m, idx) => idx > rootIndex && isStructuredOS(textOf(m)));
-  const hardEnd = nextRootIndex >= 0 ? nextRootIndex : ordered.length;
+  const rootGroup = groupJidOf(root);
+  const groupOrdered = ordered.filter(m => groupJidOf(m) === rootGroup);
+  const rootIndex = groupOrdered.indexOf(root);
+  const nextRootIndex = groupOrdered.findIndex((m, idx) => idx > rootIndex && isStructuredOS(textOf(m)));
+  const hardEnd = nextRootIndex >= 0 ? nextRootIndex : groupOrdered.length;
 
-  const direct = ordered.filter(m => {
+  const direct = groupOrdered.filter(m => {
     if (m === root) return false;
     const c = ctxOf(m);
     return (c?.stanzaId && c.stanzaId === rootId) ||
@@ -276,7 +281,7 @@ function analyzeMatchedRoot(ordered, root, { maxAdjacent = 8, maxAdjacentMinutes
 
   const adjacent = [];
   for (let i = rootIndex + 1; i < Math.min(hardEnd, rootIndex + 1 + maxAdjacent); i++) {
-    const m = ordered[i];
+    const m = groupOrdered[i];
     if (isStructuredOS(textOf(m))) break;
     if (tsOf(m) - rootTs > maxAdjacentMinutes * 60) break;
     adjacent.push(m);
@@ -372,6 +377,8 @@ export function analyzeSpreadsheetReferences(messages, references, {
     items.push({
       reference: safeReference(reference),
       osMessageId: idOf(root),
+      groupName: groupNameOf(root),
+      groupJid: groupJidOf(root),
       date: tsOf(root),
       ...details,
       originalText: textOf(root),
