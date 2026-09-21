@@ -7,70 +7,41 @@
   <title>Possivelmente Fechadas • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="fechadas">
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link active" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Conferência</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Resultados disponíveis</span></div>
-      <div class="sidebar-card__message">Confira as evidências antes de considerar uma OS concluída.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
         <span class="section-kicker">Conferência</span>
         <h1 class="page-title">Possivelmente Fechadas</h1>
-        <p class="page-subtitle">Revise as ordens da planilha que apresentam indícios de conclusão nas conversas dos grupos.</p>
+        <p class="page-subtitle">Ordens da planilha com mensagens que indicam execução ou conclusão.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
-        <a class="secondary-button" href="/importar-planilha">Trocar planilha</a>
-        <a class="secondary-button" href="/relatorio">Ver relatório</a>
-      </div>
-    </section>
-
-    <section class="hero-panel">
-      <div class="hero-panel__row">
-        <div>
-          <span class="panel__kicker">Análise de conclusão</span>
-          <h2>Ordens que merecem conferência</h2>
-          <p id="closedHeroText">A planilha define as ordens analisadas. As conversas dos grupos são consultadas para encontrar mensagens e evidências relacionadas.</p>
-        </div>
-        <div class="filterbar">
-          <label for="days">Período
-            <select id="days"><option value="20">Últimos 20 dias</option><option value="30" selected>Últimos 30 dias</option></select>
-          </label>
-          <button id="refresh" class="primary-button" type="button">Atualizar análise</button>
-        </div>
+        <a class="secondary-button" href="/os-analisadas">OS Analisadas</a>
       </div>
     </section>
 
     <section class="summary-row">
       <article class="stat-card info"><span class="stat-card__label">Período</span><b id="periodValue" class="stat-card__value">30 dias</b><span class="stat-card__meta">Janela de consulta</span></article>
       <article class="stat-card"><span class="stat-card__label">OS na planilha</span><b id="spreadsheetCount" class="stat-card__value">—</b><span class="stat-card__meta">Referência principal</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Localizadas nos grupos</span><b id="matchedCount" class="stat-card__value">—</b><span id="matchedMeta" class="stat-card__meta">Mensagens relacionadas encontradas</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Localizadas nos grupos</span><b id="matchedCount" class="stat-card__value">—</b><span id="matchedMeta" class="stat-card__meta">Mensagens relacionadas</span></article>
       <article class="stat-card success"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Aguardando conferência</span></article>
     </section>
 
     <section class="panel">
-      <div class="panel-title-row">
-        <div><span class="panel__kicker">Resultados</span><h2 style="margin:6px 0 0">Ordens encontradas</h2></div>
-        <span id="agentStatus" class="status-badge loading">Carregando análise…</span>
+      <div class="list-toolbar">
+        <div>
+          <span class="panel__kicker">Resultados</span>
+          <strong id="closedHeroText">Carregando ordens com indícios de conclusão…</strong>
+        </div>
+        <div class="list-toolbar__controls">
+          <label class="compact-select">Período<select id="days"><option value="20">20 dias</option><option value="30" selected>30 dias</option></select></label>
+          <button id="refresh" class="primary-button" type="button">Atualizar</button>
+        </div>
       </div>
-      <p class="muted">Cada card mostra os dados da OS e as mensagens que sustentam a classificação.</p>
+      <div class="list-summary"><span>Detalhes e evidências</span><span id="agentStatus" class="status-badge loading">Carregando</span></div>
       <div id="results" class="closed-list"><div class="empty-state">Carregando análise…</div></div>
     </section>
 
