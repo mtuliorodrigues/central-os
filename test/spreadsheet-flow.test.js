@@ -74,7 +74,9 @@ test("usa a planilha como referência e encontra evidência de conclusão por re
   assert.equal(analysis.totalMatched, 1);
   assert.equal(analysis.totalUnmatched, 0);
   assert.equal(analysis.items[0].classification, "possivelmente_realizada");
+  assert.equal(analysis.items[0].sender, "Tulio");
   assert.equal(analysis.items[0].evidence[0].relation, "resposta");
+  assert.equal(analysis.items[0].evidence[0].sender, "Wander");
 
   const closed = findPossiblyClosed(messages, { days: 30, references });
   assert.equal(closed.totalPossiblyClosed, 1);
@@ -154,3 +156,36 @@ test("mantém o grupo de origem e não mistura contexto entre grupos", () => {
   assert.equal(analysis.items[0].evidence[0].groupName, "TÉC.PLAY");
 });
 
+
+
+test("usa número do remetente quando o WhatsApp não fornece nome", () => {
+  const group = "333333333333@g.us";
+  const messages = [{
+    __groupName: "O.S DIARIA",
+    __groupJid: group,
+    key: {
+      id: "os-number-sender",
+      remoteJid: group,
+      participant: "5534999999999:7@s.whatsapp.net"
+    },
+    messageTimestamp: 3000,
+    message: {
+      conversation: "*Cliente:* Cliente Numero\n*ID:* 88888\n*Login:* numeroteste\n*Serviço:* Internet\n*Descrição:* Sem conexão"
+    }
+  }];
+
+  const references = [{
+    rowNumber: 2,
+    client: "Cliente Numero",
+    cpf: "",
+    osNumber: "",
+    contractId: "88888",
+    login: "numeroteste",
+    service: "Internet",
+    description: "Sem conexão",
+    date: ""
+  }];
+
+  const analysis = analyzeSpreadsheetReferences(messages, references, { days: 30 });
+  assert.equal(analysis.items[0].sender, "5534999999999");
+});
