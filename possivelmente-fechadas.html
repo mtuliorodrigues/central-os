@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Possivelmente Fechadas • Central OS</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <small>PLAY SOLUÇÕES • CENTRAL OS</small>
+        <h1>Possivelmente Fechadas</h1>
+        <p>OS com indícios de conclusão que ainda precisam de conferência.</p>
+      </div>
+      <a class="button secondary" href="/">← Voltar ao painel</a>
+    </header>
+
+    <section class="hero closed-hero">
+      <div>
+        <small>GRUPO PILOTO</small>
+        <h2>TÉC.PLAY</h2>
+        <p>O motor analisa somente o período selecionado e mostra a OS completa junto das mensagens que sustentam a classificação.</p>
+      </div>
+      <div class="filterbar">
+        <label for="days">Período</label>
+        <select id="days">
+          <option value="20">Últimos 20 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+        </select>
+        <button id="refresh" class="button" type="button">Analisar</button>
+      </div>
+    </section>
+
+    <section class="summary-row">
+      <article><span>Período</span><b id="periodValue">30 dias</b></article>
+      <article><span>Mensagens no período</span><b id="messageCount">—</b></article>
+      <article><span>OS estruturadas</span><b id="structuredCount">—</b></article>
+      <article class="done"><span>Possivelmente fechadas</span><b id="closedCount">—</b></article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title-row">
+        <div>
+          <small>CONFERÊNCIA</small>
+          <h2>OS encontradas</h2>
+        </div>
+        <span id="agentStatus" class="status-badge loading">Conectando ao motor local…</span>
+      </div>
+      <p class="muted">Nenhuma OS é fechada automaticamente. Esta tela mostra os indícios para você conferir antes de qualquer ação.</p>
+      <div id="results" class="closed-list">
+        <div class="empty-state">Carregando análise…</div>
+      </div>
+    </section>
+
+    <footer>Central OS • Possivelmente Fechadas • TÉC.PLAY</footer>
+  </main>
+  <script type="module" src="/possivelmente-fechadas.js"></script>
+</body>
+</html>
