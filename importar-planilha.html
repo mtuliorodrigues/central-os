@@ -3,56 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#03080f">
-  <title>Importar Planilha • Central OS</title>
-  <link rel="stylesheet" href="/styles.css">
+  <meta http-equiv="refresh" content="0;url=/">
+  <title>Central OS</title>
+  <script>location.replace("/");</script>
 </head>
-<body data-page="importar" >
-<div class="app-shell">
-  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
-  <main class="main">
-    <section class="topbar">
-      <div>
-        <span class="section-kicker">Ordens de serviço</span>
-        <h1 class="page-title">Importar Planilha</h1>
-        <p class="page-subtitle">Envie a planilha que define quais ordens serão analisadas.</p>
-      </div>
-      <div class="topbar__actions">
-        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
-      </div>
-    </section>
-    <section class="dashboard-grid import-layout">
-    <article class="panel">
-      <div class="panel__header"><div><span class="panel__kicker">Arquivo</span><h2>Selecionar planilha</h2></div><span id="engineBadge" class="panel__badge warning">Verificando</span></div>
-      <label id="dropzone" class="upload-zone" for="spreadsheetFile">
-        <span class="upload-zone__icon">⇧</span>
-        <strong>Escolha ou arraste a planilha aqui</strong>
-        <span>Arquivo .xlsx ou .csv • até 15 MB</span>
-        <input id="spreadsheetFile" type="file" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv">
-      </label>
-      <div id="selectedFile" class="selected-file" hidden></div>
-      <div class="hero-actions"><button id="importButton" class="primary-button" type="button" disabled>Importar e iniciar análise</button></div>
-      <div id="importStatus" class="inline-status">Aguardando arquivo.</div>
-    </article>
-    <aside class="panel">
-      <div class="panel__header"><div><span class="panel__kicker">Planilha atual</span><h2>Referência ativa</h2></div><span id="currentBadge" class="panel__badge info">Consultando</span></div>
-      <div class="status-list">
-        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Arquivo</strong><small id="currentFile">—</small></div></div></div>
-        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Ordens de serviço</strong><small>Linhas válidas importadas</small></div></div><span id="currentCount" class="status-value">—</span></div>
-        <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Importada em</strong><small id="currentDate">—</small></div></div></div>
-      </div>
-    </aside>
-  </section>
-  <section id="importResult" class="panel import-result" hidden>
-    <div class="panel__header"><div><span class="panel__kicker">Prévia</span><h2>Ordens reconhecidas</h2></div><span id="resultBadge" class="panel__badge">0 OS</span></div>
-    <div id="mapping" class="mapping-grid"></div>
-    <div class="table-wrap"><table class="data-table"><thead><tr><th>Linha</th><th>Cliente</th><th>CPF/CNPJ</th><th>OS / ID</th><th>Login</th><th>Serviço</th></tr></thead><tbody id="previewBody"></tbody></table></div>
-    <div class="hero-actions"><a class="primary-button" href="/os-analisadas">Ver OS Analisadas</a><a class="secondary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a></div>
-  </section>
-  <script type="module" src="/importar-planilha.js"></script>
-    <div class="footer">Central OS • Play Soluções</div>
-  </main>
-</div>
-<script src="/ui.js"></script>
-</body>
+<body></body>
 </html>
