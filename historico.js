@@ -104,12 +104,23 @@ function loadingRows() {
   ).join("");
 }
 
+async function getHistory(force = false) {
+  const shared = window.CentralOS?.data;
+  const cached = !force ? shared?.peekHistory?.() : null;
+  if (cached) return cached;
+  if (shared?.getHistory) return shared.getHistory({ force });
+  return localApiFetch("/api/historico");
+}
+
 async function load() {
-  body.innerHTML = loadingRows();
-  badge.textContent = "Carregando";
-  badge.className = "panel__badge info";
+  const immediate = window.CentralOS?.data?.peekHistory?.();
+  if (!immediate) {
+    body.innerHTML = loadingRows();
+    badge.textContent = "Carregando";
+    badge.className = "panel__badge info";
+  }
   try {
-    const data = await localApiFetch("/api/historico");
+    const data = immediate || await getHistory(false);
     historyItems = data.history || [];
     currentPage = 1;
     renderPage();
