@@ -120,6 +120,7 @@ const staticFiles = new Map([
   ["/index.html", ["index.html", "text/html; charset=utf-8"]],
   ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
   ["/ui.js", ["ui.js", "text/javascript; charset=utf-8"]],
+  ["/local-api.js", ["local-api.js", "text/javascript; charset=utf-8"]],
   ["/dashboard.js", ["dashboard.js", "text/javascript; charset=utf-8"]],
   ["/relatorio", ["relatorio.html", "text/html; charset=utf-8"]],
   ["/relatorio.html", ["relatorio.html", "text/html; charset=utf-8"]],
