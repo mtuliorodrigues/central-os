@@ -3430,3 +3430,61 @@ body{overflow:hidden;font-size:17.5px}
   height:100%;
   min-height:0;
 }
+
+
+/* Ajustes pontuais finais solicitados */
+@media(min-width:821px){
+  body.sidebar-expanded .nav-link[data-page-key="localizadas"] .nav-link__text{
+    font-size:14.5px;
+  }
+  body.sidebar-expanded .nav-link[data-page-key="fechadas"] .nav-link__text,
+  body.sidebar-expanded .nav-link[data-page-key="pendentes"] .nav-link__text{
+    font-size:14px;
+  }
+}
+
+/* Somente Dashboard: conteúdo central mais compacto e posicionado no topo */
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-layout{
+  height:auto;
+  align-content:start;
+  align-items:stretch;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-primary,
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-future{
+  height:auto;
+  min-height:0;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-summary{
+  flex:0 0 auto;
+  grid-template-rows:none;
+  align-content:start;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-summary .stat-card{
+  height:auto;
+}
+
+/* Gradiente dos títulos: verde Matrix → azul → verde Matrix → vermelho, fluxo contínuo */
+.page-title{
+  background-image:repeating-linear-gradient(
+    90deg,
+    #14d69a 0%,
+    #22c6df 12.5%,
+    #14d69a 25%,
+    #ef4f5f 37.5%,
+    #14d69a 50%
+  )!important;
+  background-size:200% 100%;
+  animation:titleGradient 8s linear infinite;
+}
+.page-title::after{
+  background:repeating-linear-gradient(
+    90deg,
+    #14d69a 0%,
+    #22c6df 12.5%,
+    #14d69a 25%,
+    #ef4f5f 37.5%,
+    #14d69a 50%
+  );
+  background-size:200% 100%;
+  animation:titleUnderlineFlow 6s linear infinite;
+}
