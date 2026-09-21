@@ -198,14 +198,24 @@ function loadingRows() {
   ).join("");
 }
 
-async function load() {
+async function getAnalysis(days, force = false) {
+  const shared = window.CentralOS?.data;
+  const cached = !force ? shared?.peekAnalysis?.(days) : null;
+  if (cached) return { data: cached, cached: true };
+  if (shared?.getAnalysis) return { data: await shared.getAnalysis(days, { force }), cached: false };
+  return { data: await localApiFetch("/api/analise?days=" + days), cached: false };
+}
+
+async function load(force = false) {
   const days = Number(daysEl?.value || 30);
-  statusEl.textContent = "Atualizando";
-  statusEl.className = "panel__badge warning";
-  bodyEl.innerHTML = loadingRows();
+  const immediate = !force ? window.CentralOS?.data?.peekAnalysis?.(days) : null;
+
+  statusEl.textContent = immediate ? "Atualizado" : "Atualizando";
+  statusEl.className = immediate ? "panel__badge" : "panel__badge warning";
+  if (!immediate) bodyEl.innerHTML = loadingRows();
 
   try {
-    const data = await localApiFetch("/api/analise?days=" + days);
+    const { data } = await getAnalysis(days, force);
     sourceItems = selectItems(data.items || []);
     statusEl.textContent = "Atualizado";
     statusEl.className = "panel__badge";
@@ -229,7 +239,7 @@ async function load() {
   }
 }
 
-document.getElementById("refresh")?.addEventListener("click", load);
-daysEl?.addEventListener("change", load);
+document.getElementById("refresh")?.addEventListener("click", () => load(true));
+daysEl?.addEventListener("change", () => load(false));
 searchEl?.addEventListener("input", () => applyFilter(true));
 load();
