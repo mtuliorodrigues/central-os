@@ -1,14 +1,15 @@
 {
   "name": "central-os",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
     "web": "node src/server.js",
-    "check": "node --check src/index.js && node --check src/server.js && node --check src/possibly-closed.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js"
+    "check": "node --check src/index.js && node --check src/server.js && node --check src/spreadsheet-import.js && node --check src/possibly-closed.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0"
   }
 }
