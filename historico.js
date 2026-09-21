@@ -87,7 +87,27 @@ ensurePagination().addEventListener("click", event => {
   tableWrap?.scrollTo({ top: 0, behavior: "smooth" });
 });
 
+function loadingRows() {
+  return Array.from({ length: 7 }, () =>
+    '<tr class="skeleton-row">' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-80"></span></td>' +
+      '<td><span class="skeleton-block w-35"></span></td>' +
+      '<td><span class="skeleton-block w-35"></span></td>' +
+      '<td><span class="skeleton-block w-35"></span></td>' +
+      '<td><span class="skeleton-block w-35"></span></td>' +
+      '<td><span class="skeleton-block w-35"></span></td>' +
+      '<td><span class="skeleton-block w-45"></span></td>' +
+      '<td><span class="skeleton-block w-80"></span></td>' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+    '</tr>'
+  ).join("");
+}
+
 async function load() {
+  body.innerHTML = loadingRows();
+  badge.textContent = "Carregando";
+  badge.className = "panel__badge info";
   try {
     const data = await localApiFetch("/api/historico");
     historyItems = data.history || [];
