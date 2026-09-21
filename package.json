@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "web": "node src/server.js",
     "analyze:legacy": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/server.js && node --check src/spreadsheet-import.js && node --check src/possibly-closed.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js && node --check local-api.js && node --check dashboard.js && node --check importar-planilha.js && node --check relatorio.js && node --check possivelmente-fechadas.js && node --check ui.js",
+    "check": "node --check src/index.js && node --check src/server.js && node --check src/spreadsheet-import.js && node --check src/possibly-closed.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js && node --check local-api.js && node --check dashboard.js && node --check importar-planilha.js && node --check relatorio.js && node --check possivelmente-fechadas.js && node --check analysis-list.js && node --check historico.js && node --check grupos.js && node --check ui.js",
     "test": "node --test"
   },
   "dependencies": {
