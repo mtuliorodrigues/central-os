@@ -107,7 +107,7 @@ async function processFile(file) {
 
     setStep(2, "Procurando informações nos grupos...");
     let analysisDone = false;
-    const analysisPromise = localApiFetch("/api/analise?days=30").finally(() => { analysisDone = true; });
+    const analysisPromise = localApiFetch("/api/analise/processar", { method: "POST" }).finally(() => { analysisDone = true; });
 
     await new Promise(resolve => setTimeout(resolve, 450));
     if (!analysisDone) setStep(3, "Analisando contexto...");
