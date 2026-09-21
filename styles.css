@@ -665,3 +665,136 @@ body{
   .main{padding:16px}
   .page-title{font-size:34px}
 }
+
+
+/* Navegação enxuta e páginas detalhadas */
+.sidebar{overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(20,214,154,.22) transparent}
+.navigation{margin-top:0}
+.nav-label--secondary{margin-top:18px}
+.nav-link{padding:9px 12px;margin-bottom:5px;font-size:12px}
+.nav-link__icon{width:29px;height:29px;font-size:14px;flex:none}
+.sidebar-card{margin-top:18px}
+.stat-link{text-decoration:none;color:inherit;display:block}
+.dashboard-summary{margin-top:0}
+.dashboard-bottom{
+  margin-top:16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding:16px 18px;
+  border:1px solid var(--line-soft);
+  border-radius:16px;
+  background:linear-gradient(180deg,rgba(9,21,34,.92),rgba(7,18,28,.94));
+  box-shadow:0 10px 30px rgba(0,0,0,.20)
+}
+.dashboard-bottom>div{display:grid;gap:5px}
+.dashboard-bottom strong{font-size:14px;color:#eaf7f0}
+.dashboard-bottom>div>span:last-child{font-size:10px;color:var(--text-light)}
+.detail-panel{padding:20px}
+.list-toolbar{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap
+}
+.list-toolbar>div:first-child{display:grid;gap:6px}
+.list-toolbar>div:first-child strong{font-size:14px}
+.list-toolbar__controls{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap}
+.search-input{
+  min-width:320px;
+  min-height:42px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-soft);
+  color:var(--text);
+  padding:9px 12px;
+  outline:none
+}
+.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(20,214,154,.10)}
+.compact-select{
+  display:grid;
+  gap:5px;
+  color:var(--text-light);
+  font-size:8px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.1em
+}
+.compact-select select{
+  min-height:42px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-soft);
+  color:var(--text);
+  padding:8px 11px;
+  outline:none
+}
+.list-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:15px;
+  padding-top:13px;
+  border-top:1px solid var(--line-soft);
+  color:var(--text-soft);
+  font-size:11px
+}
+.analysis-table-wrap{margin-top:12px}
+.analysis-table{min-width:1180px}
+.analysis-table th:nth-child(1){min-width:170px}
+.analysis-table th:nth-child(4){min-width:150px}
+.analysis-table th:nth-child(6){min-width:150px}
+.analysis-table th:nth-child(7){min-width:150px}
+.analysis-table th:nth-child(8){min-width:260px}
+.evidence-column{max-width:360px}
+.status-pill{
+  display:inline-flex;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid var(--line-soft);
+  font-size:9px;
+  font-weight:800;
+  white-space:nowrap
+}
+.status-pill.success{color:#6ce2ba;background:rgba(8,59,53,.48);border-color:rgba(20,214,154,.24)}
+.status-pill.warning{color:#ebcf83;background:rgba(60,44,11,.45);border-color:rgba(242,185,75,.22)}
+.status-pill.info{color:#7bdced;background:rgba(8,47,59,.45);border-color:rgba(34,198,223,.20)}
+.status-pill.danger{color:#f1a0a7;background:rgba(59,23,32,.45);border-color:rgba(239,107,115,.22)}
+.status-pill.neutral{color:#a7bac9;background:#0b1925}
+.table-details summary{
+  cursor:pointer;
+  color:#74deb7;
+  font-size:10px;
+  font-weight:800;
+  list-style:none
+}
+.table-details summary::-webkit-details-marker{display:none}
+.table-details__content{display:grid;gap:8px;margin-top:8px}
+.evidence-preview{
+  padding:9px 10px;
+  border:1px solid var(--line-soft);
+  border-radius:9px;
+  background:#07141d
+}
+.evidence-preview strong{font-size:9px;color:#8fd8bd;text-transform:uppercase;letter-spacing:.08em}
+.evidence-preview p{
+  margin:5px 0 0;
+  color:#c8d8e2;
+  font-size:10px;
+  line-height:1.5;
+  white-space:pre-wrap
+}
+.history-table{min-width:1180px}
+.import-layout{margin-top:0}
+
+@media(max-height:800px) and (min-width:821px){
+  .sidebar-card{display:none}
+}
+@media(max-width:760px){
+  .search-input{min-width:100%;width:100%}
+  .list-toolbar__controls{width:100%}
+  .dashboard-bottom{align-items:flex-start;flex-direction:column}
+}
