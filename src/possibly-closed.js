@@ -38,7 +38,16 @@ function ctxOf(m) {
 
 function idOf(m) { return m?.key?.id || m?.id || ""; }
 function tsOf(m) { return Number(m?.messageTimestamp || m?.timestamp || 0); }
-function senderOf(m) { return m?.pushName || m?.key?.participant || m?.participant || "Desconhecido"; }
+function senderOf(m) {
+  const name = String(m?.pushName || "").trim();
+  if (name) return name;
+
+  const raw = String(m?.key?.participant || m?.participant || m?.sender || "").trim();
+  if (!raw) return "Desconhecido";
+
+  const local = raw.split("@")[0].split(":")[0].trim();
+  return local || raw;
+}
 function groupNameOf(m) { return m?.__groupName || "Grupo"; }
 function groupJidOf(m) { return m?.__groupJid || m?.key?.remoteJid || ""; }
 
@@ -379,6 +388,7 @@ export function analyzeSpreadsheetReferences(messages, references, {
       osMessageId: idOf(root),
       groupName: groupNameOf(root),
       groupJid: groupJidOf(root),
+      sender: senderOf(root),
       date: tsOf(root),
       ...details,
       originalText: textOf(root),
