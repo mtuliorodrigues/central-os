@@ -4,9 +4,15 @@ const el = id => document.getElementById(id);
 const daysEl = el("days");
 const resultsEl = el("results");
 const statusEl = el("agentStatus");
-const PAGE_SIZE = 6;
+const pageSizeEl = el("closedPageSize");
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20];
+const savedPageSize = Number(localStorage.getItem("centralOSPageSize") || 10);
+
+let pageSize = PAGE_SIZE_OPTIONS.includes(savedPageSize) ? savedPageSize : 10;
 let items = [];
 let currentPage = 1;
+
+if (pageSizeEl) pageSizeEl.value = String(pageSize);
 
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
@@ -100,14 +106,14 @@ function ensurePagination() {
     if (!button || button.disabled) return;
     currentPage = Number(button.dataset.page || 1);
     renderPage();
-    document.querySelector(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    resultsEl?.scrollTo({ top: 0, behavior: "smooth" });
   });
   return pagination;
 }
 
 function renderPagination() {
   const pagination = ensurePagination();
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   if (totalPages <= 1) {
@@ -136,8 +142,8 @@ function renderPage() {
     return;
   }
 
-  const start = (currentPage - 1) * PAGE_SIZE;
-  resultsEl.innerHTML = items.slice(start, start + PAGE_SIZE).map((item, index) => itemHtml(item, start + index)).join("");
+  const start = (currentPage - 1) * pageSize;
+  resultsEl.innerHTML = items.slice(start, start + pageSize).map((item, index) => itemHtml(item, start + index)).join("");
   renderPagination();
 }
 
@@ -224,4 +230,11 @@ async function load(force = false) {
 
 el("refresh").addEventListener("click", () => load(true));
 daysEl.addEventListener("change", () => load(false));
+pageSizeEl?.addEventListener("change", () => {
+  const next = Math.min(20, Math.max(5, Number(pageSizeEl.value || 10)));
+  pageSize = PAGE_SIZE_OPTIONS.includes(next) ? next : 10;
+  localStorage.setItem("centralOSPageSize", String(pageSize));
+  currentPage = 1;
+  renderPage();
+});
 load();
