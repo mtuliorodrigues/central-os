@@ -36,7 +36,7 @@ function evidenceHtml(ev) {
         '<time>' + formatDate(ev.timestamp) + '</time>',
       '</div>',
       '<p class="evidence-reason">' + escapeHtml(ev.reason) + '</p>',
-      ev.signal ? '<p class="signal">Sinal detectado: “' + escapeHtml(ev.signal) + '”</p>' : '',
+      ev.signal ? '<p class="signal">Trecho identificado: “' + escapeHtml(ev.signal) + '”</p>' : '',
       '<blockquote>' + displayText(ev.text) + '</blockquote>',
     '</div>'
   ].join("");
@@ -50,20 +50,15 @@ function itemHtml(item, index) {
       ? "ID/Contrato " + escapeHtml(item.contractId)
       : escapeHtml(item.osIdentification || ref.osNumber || ref.contractId || "—");
 
-  const matchedFields = item.match?.matchedFields?.length
-    ? item.match.matchedFields.join(", ")
-    : "correspondência textual";
-
   return [
     '<article class="os-card">',
       '<div class="os-card__head"><div>',
-        '<span class="candidate-number">PLANILHA • LINHA ' + escapeHtml(ref.rowNumber || "—") + '</span>',
+        '<span class="candidate-number">ORDEM ' + String(index + 1).padStart(2, "0") + '</span>',
         '<h3>' + escapeHtml(item.client || ref.client || "Cliente não identificado") + '</h3>',
         '<div class="meta-line">',
           '<span>' + idLabel + '</span>',
           '<span>' + formatDate(item.date) + '</span>',
           '<span class="confidence ' + escapeHtml(item.confidence) + '">Confiança ' + escapeHtml(item.confidence) + '</span>',
-          '<span>Match: ' + escapeHtml(matchedFields) + '</span>',
         '</div>',
       '</div></div>',
 
@@ -80,13 +75,12 @@ function itemHtml(item, index) {
       '</div>',
 
       '<details class="original-message">',
-        '<summary>Ver mensagem localizada no WhatsApp</summary>',
+        '<summary>Ver mensagem relacionada</summary>',
         '<pre>' + displayText(item.originalText) + '</pre>',
       '</details>',
 
       '<div class="evidence-section">',
-        '<h4>Evidências que indicam possível conclusão</h4>',
-        '<p class="score-line">Pontuação de conclusão: <b>' + (item.scores?.done ?? 0) + '</b> • Pendência: <b>' + (item.scores?.pending ?? 0) + '</b></p>',
+        '<h4>Evidências encontradas</h4>',
         '<div class="evidence-list">',
           (item.evidence || []).map(evidenceHtml).join("") || '<div class="empty-state">Sem evidências detalhadas.</div>',
         '</div>',
@@ -99,11 +93,11 @@ function render(data) {
   el("periodValue").textContent = data.days + " dias";
   el("spreadsheetCount").textContent = Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR");
   el("matchedCount").textContent = Number(data.totalMatched || 0).toLocaleString("pt-BR");
-  el("matchedMeta").textContent = Number(data.totalMessages || 0).toLocaleString("pt-BR") + " mensagens verificadas";
+  el("matchedMeta").textContent = "Referências encontradas no período";
   el("closedCount").textContent = Number(data.totalPossiblyClosed || 0).toLocaleString("pt-BR");
-  el("closedHeroText").textContent = (data.import?.fileName || "Planilha importada") + " definiu " + Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR") + " OS de referência. A busca foi feita no TÉC.PLAY.";
+  el("closedHeroText").textContent = (data.import?.fileName || "Planilha importada") + " definiu " + Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR") + " OS para análise. As conversas dos grupos foram usadas como fonte de contexto.";
 
-  statusEl.textContent = "Motor local conectado";
+  statusEl.textContent = "Atualizado";
   statusEl.className = "status-badge online-state";
 
   if (!data.items?.length) {
@@ -118,16 +112,16 @@ function showSpreadsheetRequired() {
   el("spreadsheetCount").textContent = "0";
   el("matchedCount").textContent = "0";
   el("closedCount").textContent = "0";
-  statusEl.textContent = "Planilha obrigatória";
+  statusEl.textContent = "Planilha necessária";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state"><b>Importe a planilha antes da análise.</b><p>A planilha é a referência principal das OS que serão procuradas no grupo.</p><a class="primary-button" href="/importar-planilha">Importar Planilha</a></div>';
+  resultsEl.innerHTML = '<div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><a class="primary-button" href="/importar-planilha">Importar Planilha</a></div>';
 }
 
 async function load() {
   const days = Number(daysEl.value);
-  statusEl.textContent = "Analisando OS da planilha…";
+  statusEl.textContent = "Atualizando…";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state">Localizando as OS da planilha no TÉC.PLAY e relacionando evidências…</div>';
+  resultsEl.innerHTML = '<div class="empty-state">Consultando mensagens e evidências das OS da planilha…</div>';
 
   try {
     const data = await localApiFetch("/api/possivelmente-fechadas?days=" + days);
@@ -137,9 +131,9 @@ async function load() {
       showSpreadsheetRequired();
       return;
     }
-    statusEl.textContent = "Motor local indisponível";
+    statusEl.textContent = "Indisponível";
     statusEl.className = "status-badge offline";
-    resultsEl.innerHTML = '<div class="empty-state error-state"><b>Não foi possível acessar o motor local.</b><p>No computador que possui a Evolution API, abra a pasta Central OS e execute <code>npm run web</code>. Depois atualize esta página.</p></div>';
+    resultsEl.innerHTML = '<div class="empty-state error-state"><b>Não foi possível atualizar a análise agora.</b><p>Tente novamente em instantes.</p></div>';
   }
 }
 
