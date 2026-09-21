@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/relatorio", "destination": "/relatorio.html" },
+    { "source": "/possivelmente-fechadas", "destination": "/possivelmente-fechadas.html" },
+    { "source": "/grupos", "destination": "/grupos.html" },
+    { "source": "/configuracoes", "destination": "/configuracoes.html" }
+  ]
 }
