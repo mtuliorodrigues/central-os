@@ -444,7 +444,22 @@ async function getPossiblyClosed(days) {
 
 async function getSummary() {
   const current = await getCurrentImport();
-  if (!current) return { imported: false, counts: {} };
+  const history = await readHistory();
+  const reportsGenerated = history.filter(item => item?.analyzedAt).length;
+
+  if (!current) {
+    return {
+      imported: false,
+      counts: {
+        reportsGenerated,
+        analyzed: 0,
+        located: 0,
+        notLocated: 0,
+        possiblyClosed: 0,
+        pending: 0
+      }
+    };
+  }
 
   const cache = await readAnalysisCache();
   if (cache?.version !== 3 || cache?.importId !== current.importId || !cache?.full) {
@@ -452,6 +467,7 @@ async function getSummary() {
       imported: true,
       import: publicImportSummary(current, { preview: 0 }),
       counts: {
+        reportsGenerated,
         imported: current.references?.length || 0,
         analyzed: 0,
         located: 0,
@@ -469,6 +485,7 @@ async function getSummary() {
     imported: true,
     import: publicImportSummary(current, { preview: 0 }),
     counts: {
+      reportsGenerated,
       imported: current.references?.length || 0,
       analyzed: full.totalSpreadsheetOS || 0,
       located: full.totalMatched || 0,
