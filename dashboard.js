@@ -53,7 +53,7 @@ async function loadSummary() {
       return;
     }
 
-    file.textContent = data.import?.fileName || "Planilha importada";
+    file.textContent = "Planilha atual: " + (data.import?.fileName || "Planilha importada");
     updated.textContent = data.lastAnalysis
       ? "Última análise: " + new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(data.lastAnalysis))
       : "Planilha pronta para análise.";
