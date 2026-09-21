@@ -156,9 +156,14 @@ importButton.addEventListener("click", async () => {
     importStatus.className = "inline-status is-loading";
     renderCurrent(data);
 
-    await localApiFetch("/api/analise?days=30");
-    importStatus.textContent = `Análise concluída. ${data.totalOS} OS foram processadas.`;
-    importStatus.className = "inline-status is-success";
+    try {
+      await localApiFetch("/api/analise?days=30");
+      importStatus.textContent = `Análise concluída. ${data.totalOS} OS foram processadas.`;
+      importStatus.className = "inline-status is-success";
+    } catch {
+      importStatus.textContent = "Planilha importada com sucesso. A análise não pôde ser concluída agora; tente novamente pela página OS Analisadas.";
+      importStatus.className = "inline-status is-error";
+    }
   } catch (error) {
     importStatus.textContent = error?.message || "Não foi possível importar a planilha.";
     importStatus.className = "inline-status is-error";
