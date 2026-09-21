@@ -3201,3 +3201,232 @@ body{overflow:hidden;font-size:17.5px}
     margin-bottom:0;
   }
 }
+
+
+/* Sidebar global definitivo: ícones sempre visíveis no estado recolhido */
+@media(min-width:821px){
+  .sidebar{
+    width:108px;
+    padding-left:14px;
+    padding-right:14px;
+    overflow:hidden;
+  }
+  .main{
+    margin-left:108px;
+  }
+  body.sidebar-expanded .sidebar{
+    width:280px;
+  }
+  body.sidebar-expanded .main{
+    margin-left:280px;
+  }
+
+  .brand{
+    width:100%;
+    min-height:54px;
+    overflow:hidden;
+  }
+  .brand__icon{
+    width:52px;
+    height:52px;
+    flex:0 0 52px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  body.sidebar-expanded .brand__icon{
+    margin-left:0;
+    margin-right:0;
+  }
+  body:not(.sidebar-expanded) .brand__copy{
+    width:0!important;
+    max-width:0!important;
+    flex:0 0 0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    transform:none!important;
+  }
+
+  .navigation{
+    width:100%;
+    min-width:0;
+    overflow:visible;
+  }
+  .navigation > .nav-label:first-child{
+    display:block;
+    width:100%;
+    height:auto;
+    margin:10px 0 18px;
+    padding:0;
+    overflow:visible;
+    border:0;
+    opacity:1;
+    color:#79a79f;
+    font-size:11px;
+    line-height:1.2;
+    letter-spacing:.14em;
+    text-align:center;
+    white-space:nowrap;
+  }
+  body.sidebar-expanded .navigation > .nav-label:first-child{
+    margin:10px 0 18px 12px;
+    text-align:left;
+  }
+
+  .nav-link{
+    position:relative;
+    width:100%;
+    min-width:0;
+    height:60px;
+    margin-bottom:5px;
+    padding:6px 8px;
+    gap:13px;
+    overflow:hidden;
+  }
+  .nav-link__icon{
+    width:48px;
+    height:48px;
+    flex:0 0 48px;
+    display:grid!important;
+    place-items:center;
+    margin:0;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    font-size:23px;
+    line-height:1;
+  }
+
+  body:not(.sidebar-expanded) .nav-link{
+    justify-content:center;
+    gap:0;
+    padding-left:0;
+    padding-right:0;
+  }
+  body:not(.sidebar-expanded) .nav-link__icon{
+    position:relative;
+    left:auto;
+    right:auto;
+    margin:0 auto!important;
+  }
+  body:not(.sidebar-expanded) .nav-link__text{
+    width:0!important;
+    max-width:0!important;
+    min-width:0!important;
+    flex:0 0 0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    transform:none!important;
+    pointer-events:none!important;
+  }
+
+  body.sidebar-expanded .nav-link{
+    justify-content:flex-start;
+    gap:13px;
+    padding-left:9px;
+    padding-right:9px;
+  }
+  body.sidebar-expanded .nav-link__text{
+    width:auto!important;
+    max-width:none!important;
+    flex:1 1 auto!important;
+    overflow:visible!important;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+  }
+
+  body:not(.sidebar-expanded) .nav-label--secondary{
+    height:10px;
+    margin:7px 0 8px;
+    overflow:hidden;
+    border-top:1px solid rgba(255,255,255,.08);
+    font-size:0;
+    opacity:.55;
+  }
+  body.sidebar-expanded .nav-label--secondary{
+    height:auto;
+    margin:10px 0 8px 12px;
+    border-top:0;
+    font-size:11px;
+    opacity:1;
+  }
+
+  body:not(.sidebar-expanded) .sidebar-agent{
+    justify-content:center;
+    padding-left:0;
+    padding-right:0;
+  }
+  body:not(.sidebar-expanded) .sidebar-agent__text{
+    width:0!important;
+    max-width:0!important;
+    flex:0 0 0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    transform:none!important;
+  }
+}
+
+/* Em alturas menores, preserva o mesmo componente sem cortar os ícones */
+@media(max-height:790px) and (min-width:821px){
+  .sidebar{
+    padding-top:12px;
+    padding-bottom:10px;
+    gap:10px;
+  }
+  .brand{
+    min-height:48px;
+  }
+  .brand__icon{
+    width:46px;
+    height:46px;
+    flex-basis:46px;
+  }
+  .navigation > .nav-label:first-child{
+    margin-top:5px;
+    margin-bottom:10px;
+  }
+  .nav-link{
+    height:50px;
+    margin-bottom:2px;
+  }
+  .nav-link__icon{
+    width:42px;
+    height:42px;
+    flex-basis:42px;
+    font-size:20px;
+  }
+}
+
+/* Dashboard: conserva a proporção atual e distribui melhor a área interna */
+.page-surface--dashboard .dashboard-primary{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow:hidden;
+}
+.page-surface--dashboard .dashboard-bottom{
+  flex:0 0 auto;
+}
+.page-surface--dashboard .dashboard-summary{
+  flex:1 1 auto;
+  min-height:0;
+  grid-template-rows:repeat(3,minmax(0,1fr));
+  align-content:stretch;
+}
+.page-surface--dashboard .dashboard-summary .stat-card{
+  min-height:0;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.page-surface--dashboard .dashboard-future{
+  height:100%;
+  min-height:0;
+}
