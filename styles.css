@@ -3661,16 +3661,6 @@ body[data-page="fechadas"] .closed-list .original-message,
 body[data-page="fechadas"] .closed-list .evidence-section{
   display:none!important;
 }
-body[data-page="fechadas"] .history-modal .detail-grid,
-body[data-page="fechadas"] .history-modal .description-box,
-body[data-page="fechadas"] .history-modal .original-message,
-body[data-page="fechadas"] .history-modal .evidence-section{
-  display:grid;
-}
-body[data-page="fechadas"] .history-modal .original-message,
-body[data-page="fechadas"] .history-modal .evidence-section{
-  display:block;
-}
 
 
 /* Dashboard: mantém o novo cabeçalho central sem afetar a navegação móvel. */
