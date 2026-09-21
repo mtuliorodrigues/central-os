@@ -3,6 +3,7 @@ import { localApiFetch } from "/local-api.js";
 const el = id => document.getElementById(id);
 const daysEl = el("days");
 const resultsEl = el("results");
+const tableWrap = el("closedTableWrap");
 const statusEl = el("agentStatus");
 const pageSizeEl = el("closedPageSize");
 const modal = el("closedDetailModal");
@@ -52,37 +53,35 @@ function evidenceHtml(ev) {
   return [
     '<div class="evidence-item">',
       '<div class="evidence-meta">',
-        '<span class="relation">' + escapeHtml(ev.relation) + '</span>',
-        '<span>' + escapeHtml(ev.sender) + '</span>',
+        '<span class="relation">' + escapeHtml(ev.relation || "Evidência") + '</span>',
+        '<span>' + escapeHtml(ev.sender || "—") + '</span>',
         ev.groupName ? '<span>' + escapeHtml(ev.groupName) + '</span>' : '',
-        '<time>' + formatDate(ev.timestamp) + '</time>',
+        '<time>' + escapeHtml(formatDate(ev.timestamp)) + '</time>',
       '</div>',
-      '<p class="evidence-reason">' + escapeHtml(ev.reason) + '</p>',
+      ev.reason ? '<p class="evidence-reason">' + escapeHtml(ev.reason) + '</p>' : '',
       ev.signal ? '<p class="signal">Trecho identificado: “' + escapeHtml(ev.signal) + '”</p>' : '',
-      '<blockquote>' + displayText(ev.text) + '</blockquote>',
+      '<blockquote>' + displayText(ev.text || "") + '</blockquote>',
     '</div>'
   ].join("");
 }
 
-function summaryHtml(item, absoluteIndex) {
+function rowHtml(item, absoluteIndex) {
   const ref = item.reference || {};
   const client = item.client || ref.client || "Cliente não identificado";
   const confidence = String(item.confidence || "media").toLowerCase();
 
   return [
-    '<article class="os-card closed-summary-card">',
-      '<div class="closed-summary-card__content">',
-        '<span class="candidate-number">ORDEM ' + String(absoluteIndex + 1).padStart(2, "0") + '</span>',
-        '<h3>' + escapeHtml(client) + '</h3>',
-        '<div class="meta-line">',
-          '<span>' + formatDate(item.date) + '</span>',
-          '<span>' + escapeHtml(item.groupName || "Grupo não identificado") + '</span>',
-          '<span class="status-badge online-state">Possivelmente fechada</span>',
-          '<span class="confidence ' + escapeHtml(confidence) + '">Confiança ' + escapeHtml(confidenceLabel(item.confidence)) + '</span>',
-        '</div>',
-      '</div>',
-      '<button class="history-detail-button closed-detail-button" type="button" data-closed-index="' + absoluteIndex + '">Ver detalhes</button>',
-    '</article>'
+    '<tr>',
+      '<td><strong>' + escapeHtml(client) + '</strong></td>',
+      '<td>' + escapeHtml(formatDate(item.date || ref.date)) + '</td>',
+      '<td>' + escapeHtml(item.groupName || "—") + '</td>',
+      '<td>' + escapeHtml(item.sender || "—") + '</td>',
+      '<td><div class="closed-status-cell">',
+        '<span class="status-pill success">Possivelmente fechada</span>',
+        '<span class="confidence ' + escapeHtml(confidence) + '">Confiança ' + escapeHtml(confidenceLabel(item.confidence)) + '</span>',
+      '</div></td>',
+      '<td><button class="history-detail-button" type="button" data-closed-index="' + absoluteIndex + '">Ver detalhes</button></td>',
+    '</tr>'
   ].join("");
 }
 
@@ -91,11 +90,18 @@ function detailHtml(item) {
   const client = item.client || ref.client || "Cliente não identificado";
   const description = item.description || ref.description || "Descrição não identificada.";
   const evidence = Array.isArray(item.evidence) ? item.evidence : [];
+  const identification = item.osNumber || ref.osNumber || item.contractId || ref.contractId || item.osIdentification || "—";
+  const service = item.service || ref.service || "—";
+  const login = item.login || ref.login || "—";
+  const matchedFields = Array.isArray(item.match?.matchedFields) && item.match.matchedFields.length
+    ? item.match.matchedFields.join(", ")
+    : "—";
+  const matchScore = item.match?.score ?? "—";
 
   return [
     '<div class="closed-modal-detail">',
       '<div class="closed-modal-summary">',
-        '<span class="status-badge online-state">Possivelmente fechada</span>',
+        '<span class="status-pill success">Possivelmente fechada</span>',
         '<span class="confidence ' + escapeHtml(String(item.confidence || "media").toLowerCase()) + '">Confiança ' + escapeHtml(confidenceLabel(item.confidence)) + '</span>',
       '</div>',
 
@@ -103,7 +109,13 @@ function detailHtml(item) {
         '<div><label>Cliente</label><p>' + escapeHtml(client) + '</p></div>',
         '<div><label>Enviado por</label><p>' + escapeHtml(item.sender || "—") + '</p></div>',
         '<div><label>Grupo</label><p>' + escapeHtml(item.groupName || "—") + '</p></div>',
-        '<div><label>Data</label><p>' + escapeHtml(formatDate(item.date)) + '</p></div>',
+        '<div><label>Data</label><p>' + escapeHtml(formatDate(item.date || ref.date)) + '</p></div>',
+        '<div><label>OS / ID</label><p>' + escapeHtml(identification) + '</p></div>',
+        '<div><label>Serviço</label><p>' + escapeHtml(service) + '</p></div>',
+        '<div><label>Login</label><p>' + escapeHtml(login) + '</p></div>',
+        '<div><label>Pontuação da correspondência</label><p>' + escapeHtml(matchScore) + '</p></div>',
+        '<div><label>Campos correspondentes</label><p>' + escapeHtml(matchedFields) + '</p></div>',
+        '<div><label>Classificação</label><p>Possivelmente fechada</p></div>',
       '</div>',
 
       '<div class="description-box">',
@@ -133,7 +145,7 @@ function openDetails(index) {
   const ref = item.reference || {};
   const client = item.client || ref.client || "Cliente não identificado";
   modalTitle.textContent = client;
-  modalSubtitle.textContent = [item.groupName || "Grupo não identificado", formatDate(item.date)].join(" • ");
+  modalSubtitle.textContent = [item.groupName || "Grupo não identificado", formatDate(item.date || ref.date)].join(" • ");
   modalBody.innerHTML = detailHtml(item);
   modal.hidden = false;
   document.body.classList.add("history-modal-open");
@@ -151,13 +163,13 @@ function ensurePagination() {
   pagination = document.createElement("div");
   pagination.id = "closedPagination";
   pagination.className = "pagination";
-  resultsEl.insertAdjacentElement("afterend", pagination);
+  tableWrap?.insertAdjacentElement("afterend", pagination);
   pagination.addEventListener("click", event => {
     const button = event.target.closest("button[data-page]");
     if (!button || button.disabled) return;
     currentPage = Number(button.dataset.page || 1);
     renderPage();
-    resultsEl?.scrollTo({ top: 0, behavior: "smooth" });
+    tableWrap?.scrollTo({ top: 0, behavior: "smooth" });
   });
   return pagination;
 }
@@ -177,24 +189,28 @@ function renderPagination() {
   const parts = [`<button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>Anterior</button>`];
   const visible = new Set([1, totalPages, currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2].filter(p => p >= 1 && p <= totalPages));
   let prev = 0;
+
   [...visible].sort((a,b) => a-b).forEach(page => {
     if (prev && page - prev > 1) parts.push('<span class="pagination__ellipsis">…</span>');
     parts.push(`<button type="button" data-page="${page}" class="${page === currentPage ? "active" : ""}">${page}</button>`);
     prev = page;
   });
+
   parts.push(`<button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Próxima</button>`);
   pagination.innerHTML = parts.join("");
 }
 
 function renderPage() {
   if (!items.length) {
-    resultsEl.innerHTML = '<div class="empty-state">Nenhuma OS da planilha apresentou evidência suficiente de conclusão neste período.</div>';
+    resultsEl.innerHTML = '<tr><td colspan="6"><div class="empty-state">Nenhuma OS da planilha apresentou evidência suficiente de conclusão neste período.</div></td></tr>';
     ensurePagination().hidden = true;
     return;
   }
 
   const start = (currentPage - 1) * pageSize;
-  resultsEl.innerHTML = items.slice(start, start + pageSize).map((item, index) => summaryHtml(item, start + index)).join("");
+  resultsEl.innerHTML = items.slice(start, start + pageSize)
+    .map((item, index) => rowHtml(item, start + index))
+    .join("");
   renderPagination();
 }
 
@@ -219,20 +235,20 @@ function showSpreadsheetRequired() {
   el("closedCount").textContent = "0";
   statusEl.textContent = "Planilha necessária";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state"><b>Nenhuma análise disponível.</b><p>Volte ao Dashboard para importar e processar uma planilha.</p><a class="primary-button" href="/">Ir ao Dashboard</a></div>';
+  resultsEl.innerHTML = '<tr><td colspan="6"><div class="empty-state"><b>Nenhuma análise disponível.</b><p>Volte ao Dashboard para importar e processar uma planilha.</p><a class="primary-button" href="/">Ir ao Dashboard</a></div></td></tr>';
   ensurePagination().hidden = true;
 }
 
-function loadingCards() {
-  return Array.from({ length: 3 }, () =>
-    '<article class="os-card skeleton-card closed-summary-card">' +
-      '<div class="closed-summary-card__content">' +
-        '<div class="skeleton-block w-35"></div>' +
-        '<div class="skeleton-block w-60 skeleton-title"></div>' +
-        '<div class="skeleton-block w-85 skeleton-text"></div>' +
-      '</div>' +
-      '<div class="skeleton-block w-20"></div>' +
-    '</article>'
+function loadingRows() {
+  return Array.from({ length: 6 }, () =>
+    '<tr class="skeleton-row">' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-55"></span></td>' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-55"></span></td>' +
+      '<td><span class="skeleton-pill"></span></td>' +
+      '<td><span class="skeleton-pill"></span></td>' +
+    '</tr>'
   ).join("");
 }
 
@@ -256,7 +272,7 @@ async function load(force = false) {
 
   statusEl.textContent = immediate ? "Atualizado" : "Atualizando…";
   statusEl.className = immediate ? "status-badge online-state" : "status-badge loading";
-  if (!immediate) resultsEl.innerHTML = loadingCards();
+  if (!immediate) resultsEl.innerHTML = loadingRows();
 
   try {
     const data = await getClosedData(days, force);
@@ -270,7 +286,7 @@ async function load(force = false) {
     }
     statusEl.textContent = "Indisponível";
     statusEl.className = "status-badge offline";
-    resultsEl.innerHTML = '<div class="empty-state error-state"><b>Não foi possível atualizar a análise agora.</b><p>Tente novamente em instantes.</p></div>';
+    resultsEl.innerHTML = '<tr><td colspan="6"><div class="empty-state error-state"><b>Não foi possível atualizar a análise agora.</b><p>Tente novamente em instantes.</p></div></td></tr>';
     ensurePagination().hidden = true;
   }
 }
