@@ -68,13 +68,47 @@ document.addEventListener("click", event => {
 });
 
 if (sidebar) {
-  const setExpanded = expanded => document.body.classList.toggle("sidebar-expanded", expanded);
-  sidebar.addEventListener("mouseenter", () => setExpanded(true));
-  sidebar.addEventListener("mouseleave", () => setExpanded(false));
-  sidebar.addEventListener("focusin", () => setExpanded(true));
-  sidebar.addEventListener("focusout", event => {
-    if (!sidebar.contains(event.relatedTarget)) setExpanded(false);
+  const setExpanded = expanded => {
+    if (window.innerWidth <= 820) {
+      document.body.classList.remove("sidebar-expanded");
+      return;
+    }
+    document.body.classList.toggle("sidebar-expanded", Boolean(expanded));
+  };
+
+  let lastPointer = { x: -1, y: -1 };
+
+  const syncSidebarToPointer = () => {
+    if (window.innerWidth <= 820 || lastPointer.x < 0 || lastPointer.y < 0) {
+      setExpanded(false);
+      return;
+    }
+    const underPointer = document.elementFromPoint(lastPointer.x, lastPointer.y);
+    setExpanded(Boolean(underPointer && sidebar.contains(underPointer)));
+  };
+
+  sidebar.addEventListener("pointerenter", event => {
+    lastPointer = { x: event.clientX, y: event.clientY };
+    setExpanded(true);
   });
+
+  sidebar.addEventListener("pointerleave", event => {
+    lastPointer = { x: event.clientX, y: event.clientY };
+    setExpanded(false);
+  });
+
+  document.addEventListener("pointermove", event => {
+    lastPointer = { x: event.clientX, y: event.clientY };
+    if (document.body.classList.contains("sidebar-expanded")) {
+      const underPointer = document.elementFromPoint(event.clientX, event.clientY);
+      if (!underPointer || !sidebar.contains(underPointer)) setExpanded(false);
+    }
+  }, { passive: true });
+
+  window.addEventListener("blur", () => setExpanded(false));
+  window.addEventListener("resize", syncSidebarToPointer);
+
+  window.CentralOSSidebar = { sync: syncSidebarToPointer, collapse: () => setExpanded(false) };
 }
 
 async function localApi() {
@@ -236,6 +270,8 @@ async function softNavigate(target, { push = true, forceHtml = false } = {}) {
     document.title = doc.title || document.title;
     updateActiveNav();
     closeMenu();
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    requestAnimationFrame(() => window.CentralOSSidebar?.sync?.());
 
     if (push) history.pushState({ centralOS: true }, "", url.pathname + url.search + url.hash);
 
