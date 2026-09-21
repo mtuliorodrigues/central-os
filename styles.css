@@ -2901,3 +2901,233 @@ body{overflow:hidden;font-size:17.5px}
 .panel__kicker{
   font-weight:900;
 }
+
+
+/* Refinamento visual final: largura, menu recolhido e cards sem gradiente */
+@media(min-width:821px){
+  .sidebar{
+    width:92px;
+    padding-left:14px;
+    padding-right:14px;
+  }
+  .main{
+    margin-left:92px;
+  }
+  body.sidebar-expanded .sidebar{
+    width:280px;
+  }
+  body.sidebar-expanded .main{
+    margin-left:280px;
+  }
+
+  .brand{
+    min-height:50px;
+  }
+  .brand__icon{
+    width:50px;
+    height:50px;
+    flex:0 0 50px;
+  }
+
+  .navigation{
+    overflow:visible;
+  }
+  .navigation > .nav-label:first-child{
+    height:auto;
+    overflow:visible;
+    border-top:0;
+    opacity:1;
+    font-size:11px;
+    line-height:1;
+    text-align:center;
+    letter-spacing:.13em;
+    margin:8px 0 17px;
+    color:#79a79f;
+  }
+  body.sidebar-expanded .navigation > .nav-label:first-child{
+    text-align:left;
+    margin:10px 0 18px 12px;
+  }
+
+  .nav-link{
+    height:54px;
+    min-width:54px;
+    padding:5px 8px;
+    gap:13px;
+  }
+  .nav-link__icon{
+    width:42px;
+    height:42px;
+    flex:0 0 42px;
+    font-size:20px;
+  }
+  body:not(.sidebar-expanded) .nav-link{
+    justify-content:center;
+    padding-left:0;
+    padding-right:0;
+  }
+  body:not(.sidebar-expanded) .nav-link__icon{
+    margin-left:auto;
+    margin-right:auto;
+  }
+  body.sidebar-expanded .nav-link{
+    justify-content:flex-start;
+  }
+}
+
+/* Dashboard só um pouco mais largo */
+@media(min-width:1500px){
+  .main > .page-surface--dashboard{
+    width:78%;
+  }
+}
+@media(min-width:1281px) and (max-width:1499px){
+  .main > .page-surface--dashboard{
+    width:85%;
+  }
+}
+@media(min-width:1121px) and (max-width:1280px){
+  .main > .page-surface--dashboard{
+    width:92%;
+  }
+}
+
+/* Outras páginas: mesma sensação de equilíbrio, adaptada ao conteúdo */
+@media(min-width:1500px){
+  body[data-page="analisadas"] .main > .page-surface,
+  body[data-page="localizadas"] .main > .page-surface,
+  body[data-page="nao-localizadas"] .main > .page-surface,
+  body[data-page="pendentes"] .main > .page-surface,
+  body[data-page="historico"] .main > .page-surface,
+  body[data-page="fechadas"] .main > .page-surface{
+    width:92%;
+  }
+
+  body[data-page="grupos"] .main > .page-surface,
+  body[data-page="configuracoes"] .main > .page-surface{
+    width:86%;
+  }
+}
+@media(min-width:1281px) and (max-width:1499px){
+  body[data-page="analisadas"] .main > .page-surface,
+  body[data-page="localizadas"] .main > .page-surface,
+  body[data-page="nao-localizadas"] .main > .page-surface,
+  body[data-page="pendentes"] .main > .page-surface,
+  body[data-page="historico"] .main > .page-surface,
+  body[data-page="fechadas"] .main > .page-surface{
+    width:94%;
+  }
+
+  body[data-page="grupos"] .main > .page-surface,
+  body[data-page="configuracoes"] .main > .page-surface{
+    width:90%;
+  }
+}
+@media(min-width:1121px) and (max-width:1280px){
+  body[data-page="analisadas"] .main > .page-surface,
+  body[data-page="localizadas"] .main > .page-surface,
+  body[data-page="nao-localizadas"] .main > .page-surface,
+  body[data-page="pendentes"] .main > .page-surface,
+  body[data-page="historico"] .main > .page-surface,
+  body[data-page="fechadas"] .main > .page-surface{
+    width:97%;
+  }
+
+  body[data-page="grupos"] .main > .page-surface,
+  body[data-page="configuracoes"] .main > .page-surface{
+    width:94%;
+  }
+}
+
+/* Cards sem gradientes: profundidade por tons, bordas e sombras */
+.page-surface,
+.hero-panel,
+.panel,
+.stat-card,
+.info-card,
+.os-card,
+.quick-action,
+.flow-step,
+.group-card,
+.dashboard-primary,
+.dashboard-future,
+.dashboard-bottom{
+  background-image:none!important;
+}
+
+.page-surface{
+  background-color:#07121c!important;
+  border-color:rgba(20,214,154,.13);
+  box-shadow:
+    0 22px 64px rgba(0,0,0,.25),
+    inset 0 1px 0 rgba(255,255,255,.022);
+}
+.page-surface::before,
+.page-surface::after{
+  display:none!important;
+  content:none!important;
+  animation:none!important;
+}
+
+.page-surface .dashboard-primary,
+.page-surface .dashboard-future,
+.page-surface > .panel,
+.page-surface > .content-columns > .panel,
+.hero-panel,
+.panel{
+  background-color:#0a1825!important;
+  border-color:rgba(72,147,121,.20);
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.24),
+    inset 0 1px 0 rgba(255,255,255,.024);
+}
+
+.page-surface .stat-card,
+.page-surface .info-card,
+.page-surface .os-card,
+.stat-card,
+.info-card,
+.os-card,
+.quick-action,
+.flow-step,
+.group-card{
+  background-color:#0d1d2b!important;
+  border-color:rgba(82,158,131,.22);
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.22),
+    inset 0 1px 0 rgba(255,255,255,.026);
+}
+
+.stat-card.success{background-color:#0d201d!important}
+.stat-card.info{background-color:#0d1e28!important}
+.stat-card.warning{background-color:#221d10!important}
+.stat-card.danger{background-color:#24151b!important}
+
+.stat-card::after,
+.dashboard-future::after,
+.hero-panel::before,
+.hero-panel::after,
+.flow-step::after{
+  display:none!important;
+  content:none!important;
+}
+
+.group-card:first-child,
+.flow-step--source{
+  background-image:none!important;
+  background-color:#0d211f!important;
+}
+
+/* Mantém o gradiente exclusivamente nos títulos principais */
+.page-title{
+  background-image:repeating-linear-gradient(
+    105deg,
+    #f4fff9 0%,
+    #c9ffea 9%,
+    #14d69a 19%,
+    #82f3c9 29%,
+    #f1fff9 39%,
+    #14d69a 49%,
+    #f4fff9 58%
+  )!important;
+}
