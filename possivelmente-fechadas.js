@@ -5,6 +5,10 @@ const daysEl = el("days");
 const resultsEl = el("results");
 const statusEl = el("agentStatus");
 const pageSizeEl = el("closedPageSize");
+const modal = el("closedDetailModal");
+const modalTitle = el("closedModalTitle");
+const modalSubtitle = el("closedModalSubtitle");
+const modalBody = el("closedModalBody");
 const PAGE_SIZE_OPTIONS = [5, 10, 15, 20];
 const savedPageSize = Number(localStorage.getItem("centralOSPageSize") || 10);
 
@@ -36,6 +40,14 @@ const formatDate = ts => {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(date);
 };
 
+const confidenceLabel = value => {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "alta") return "Alta";
+  if (normalized === "media" || normalized === "média") return "Média";
+  if (normalized === "baixa") return "Baixa";
+  return value ? String(value) : "Não definida";
+};
+
 function evidenceHtml(ev) {
   return [
     '<div class="evidence-item">',
@@ -52,23 +64,43 @@ function evidenceHtml(ev) {
   ].join("");
 }
 
-function itemHtml(item, absoluteIndex) {
+function summaryHtml(item, absoluteIndex) {
   const ref = item.reference || {};
+  const client = item.client || ref.client || "Cliente não identificado";
+  const confidence = String(item.confidence || "media").toLowerCase();
+
   return [
-    '<article class="os-card">',
-      '<div class="os-card__head"><div>',
+    '<article class="os-card closed-summary-card">',
+      '<div class="closed-summary-card__content">',
         '<span class="candidate-number">ORDEM ' + String(absoluteIndex + 1).padStart(2, "0") + '</span>',
-        '<h3>' + escapeHtml(item.client || ref.client || "Cliente não identificado") + '</h3>',
+        '<h3>' + escapeHtml(client) + '</h3>',
         '<div class="meta-line">',
           '<span>' + formatDate(item.date) + '</span>',
-          item.sender ? '<span>Enviado por ' + escapeHtml(item.sender) + '</span>' : '',
-          item.groupName ? '<span>' + escapeHtml(item.groupName) + '</span>' : '',
-          '<span class="confidence ' + escapeHtml(item.confidence) + '">Confiança ' + escapeHtml(item.confidence) + '</span>',
+          '<span>' + escapeHtml(item.groupName || "Grupo não identificado") + '</span>',
+          '<span class="status-badge online-state">Possivelmente fechada</span>',
+          '<span class="confidence ' + escapeHtml(confidence) + '">Confiança ' + escapeHtml(confidenceLabel(item.confidence)) + '</span>',
         '</div>',
-      '</div></div>',
+      '</div>',
+      '<button class="history-detail-button closed-detail-button" type="button" data-closed-index="' + absoluteIndex + '">Ver detalhes</button>',
+    '</article>'
+  ].join("");
+}
+
+function detailHtml(item) {
+  const ref = item.reference || {};
+  const client = item.client || ref.client || "Cliente não identificado";
+  const description = item.description || ref.description || "Descrição não identificada.";
+  const evidence = Array.isArray(item.evidence) ? item.evidence : [];
+
+  return [
+    '<div class="closed-modal-detail">',
+      '<div class="closed-modal-summary">',
+        '<span class="status-badge online-state">Possivelmente fechada</span>',
+        '<span class="confidence ' + escapeHtml(String(item.confidence || "media").toLowerCase()) + '">Confiança ' + escapeHtml(confidenceLabel(item.confidence)) + '</span>',
+      '</div>',
 
       '<div class="detail-grid closed-detail-grid">',
-        '<div><label>Cliente</label><p>' + escapeHtml(item.client || ref.client || "—") + '</p></div>',
+        '<div><label>Cliente</label><p>' + escapeHtml(client) + '</p></div>',
         '<div><label>Enviado por</label><p>' + escapeHtml(item.sender || "—") + '</p></div>',
         '<div><label>Grupo</label><p>' + escapeHtml(item.groupName || "—") + '</p></div>',
         '<div><label>Data</label><p>' + escapeHtml(formatDate(item.date)) + '</p></div>',
@@ -76,22 +108,41 @@ function itemHtml(item, absoluteIndex) {
 
       '<div class="description-box">',
         '<label>Descrição da OS</label>',
-        '<p>' + displayText(item.description || ref.description || "Descrição não identificada.") + '</p>',
+        '<p>' + displayText(description) + '</p>',
       '</div>',
 
-      '<details class="original-message">',
-        '<summary>Ver mensagem relacionada</summary>',
-        '<pre>' + displayText(item.originalText) + '</pre>',
+      '<details class="original-message" open>',
+        '<summary>Mensagem relacionada</summary>',
+        '<pre>' + displayText(item.originalText || "Mensagem não identificada.") + '</pre>',
       '</details>',
 
       '<div class="evidence-section">',
         '<h4>Evidências encontradas</h4>',
         '<div class="evidence-list">',
-          (item.evidence || []).map(evidenceHtml).join("") || '<div class="empty-state">Sem evidências detalhadas.</div>',
+          evidence.map(evidenceHtml).join("") || '<div class="empty-state">Sem evidências detalhadas.</div>',
         '</div>',
       '</div>',
-    '</article>'
+    '</div>'
   ].join("");
+}
+
+function openDetails(index) {
+  const item = items[index];
+  if (!item || !modal || !modalBody) return;
+
+  const ref = item.reference || {};
+  const client = item.client || ref.client || "Cliente não identificado";
+  modalTitle.textContent = client;
+  modalSubtitle.textContent = [item.groupName || "Grupo não identificado", formatDate(item.date)].join(" • ");
+  modalBody.innerHTML = detailHtml(item);
+  modal.hidden = false;
+  document.body.classList.add("history-modal-open");
+}
+
+function closeDetails() {
+  if (!modal) return;
+  modal.hidden = true;
+  document.body.classList.remove("history-modal-open");
 }
 
 function ensurePagination() {
@@ -143,7 +194,7 @@ function renderPage() {
   }
 
   const start = (currentPage - 1) * pageSize;
-  resultsEl.innerHTML = items.slice(start, start + pageSize).map((item, index) => itemHtml(item, start + index)).join("");
+  resultsEl.innerHTML = items.slice(start, start + pageSize).map((item, index) => summaryHtml(item, start + index)).join("");
   renderPagination();
 }
 
@@ -174,17 +225,13 @@ function showSpreadsheetRequired() {
 
 function loadingCards() {
   return Array.from({ length: 3 }, () =>
-    '<article class="os-card skeleton-card">' +
-      '<div class="skeleton-block w-35"></div>' +
-      '<div class="skeleton-block w-60 skeleton-title"></div>' +
-      '<div class="skeleton-grid">' +
-        '<span class="skeleton-block w-80"></span>' +
-        '<span class="skeleton-block w-65"></span>' +
-        '<span class="skeleton-block w-75"></span>' +
-        '<span class="skeleton-block w-55"></span>' +
+    '<article class="os-card skeleton-card closed-summary-card">' +
+      '<div class="closed-summary-card__content">' +
+        '<div class="skeleton-block w-35"></div>' +
+        '<div class="skeleton-block w-60 skeleton-title"></div>' +
+        '<div class="skeleton-block w-85 skeleton-text"></div>' +
       '</div>' +
-      '<div class="skeleton-block w-95 skeleton-text"></div>' +
-      '<div class="skeleton-block w-85 skeleton-text"></div>' +
+      '<div class="skeleton-block w-20"></div>' +
     '</article>'
   ).join("");
 }
@@ -228,6 +275,24 @@ async function load(force = false) {
   }
 }
 
+resultsEl?.addEventListener("click", event => {
+  const button = event.target.closest("[data-closed-index]");
+  if (!button) return;
+  openDetails(Number(button.dataset.closedIndex));
+});
+
+modal?.addEventListener("click", event => {
+  if (event.target.closest("[data-closed-close]")) closeDetails();
+});
+
+if (window.CentralOSClosedDetailKeyHandler) {
+  document.removeEventListener("keydown", window.CentralOSClosedDetailKeyHandler);
+}
+window.CentralOSClosedDetailKeyHandler = event => {
+  if (event.key === "Escape" && modal && !modal.hidden) closeDetails();
+};
+document.addEventListener("keydown", window.CentralOSClosedDetailKeyHandler);
+
 el("refresh").addEventListener("click", () => load(true));
 daysEl.addEventListener("change", () => load(false));
 pageSizeEl?.addEventListener("change", () => {
@@ -237,4 +302,5 @@ pageSizeEl?.addEventListener("change", () => {
   currentPage = 1;
   renderPage();
 });
+
 load();
