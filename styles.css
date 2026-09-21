@@ -3534,3 +3534,12 @@ body[data-page="dashboard"] .main > .topbar{
   background:transparent!important;
   mix-blend-mode:screen;
 }
+
+
+/* Correção pontual: card-pai do Dashboard abaixo do subtítulo, sem mover os blocos internos */
+@media(min-width:821px){
+  body[data-page="dashboard"] .main > .page-surface--dashboard{
+    margin-top:6px;
+    padding-top:calc(clamp(18px,1.6vw,30px) - 6px);
+  }
+}
