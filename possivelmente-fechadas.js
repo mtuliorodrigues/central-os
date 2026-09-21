@@ -172,11 +172,28 @@ function showSpreadsheetRequired() {
   ensurePagination().hidden = true;
 }
 
+function loadingCards() {
+  return Array.from({ length: 3 }, () =>
+    '<article class="os-card skeleton-card">' +
+      '<div class="skeleton-block w-35"></div>' +
+      '<div class="skeleton-block w-60 skeleton-title"></div>' +
+      '<div class="skeleton-grid">' +
+        '<span class="skeleton-block w-80"></span>' +
+        '<span class="skeleton-block w-65"></span>' +
+        '<span class="skeleton-block w-75"></span>' +
+        '<span class="skeleton-block w-55"></span>' +
+      '</div>' +
+      '<div class="skeleton-block w-95 skeleton-text"></div>' +
+      '<div class="skeleton-block w-85 skeleton-text"></div>' +
+    '</article>'
+  ).join("");
+}
+
 async function load() {
   const days = Number(daysEl.value);
   statusEl.textContent = "Atualizando…";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state">Consultando mensagens e evidências das OS da planilha…</div>';
+  resultsEl.innerHTML = loadingCards();
 
   try {
     const data = await localApiFetch("/api/possivelmente-fechadas?days=" + days);
