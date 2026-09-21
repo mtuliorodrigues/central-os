@@ -10,6 +10,12 @@ const escapeHtml = value => String(value ?? "")
   .replaceAll('"', "&quot;")
   .replaceAll("'", "&#039;");
 
+const maskCpfForDisplay = value => String(value ?? "")
+  .replace(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/g, "***.***.***-**")
+  .replace(/\b\d{11}\b/g, "***.***.***-**");
+
+const displayText = value => escapeHtml(maskCpfForDisplay(value));
+
 const formatDate = ts => {
   if (!ts) return "Data não identificada";
   return new Intl.DateTimeFormat("pt-BR", {
@@ -47,7 +53,7 @@ function evidenceHtml(ev) {
       </div>
       <p class="evidence-reason">${escapeHtml(ev.reason)}</p>
       ${ev.signal ? `<p class="signal">Sinal detectado: “${escapeHtml(ev.signal)}”</p>` : ""}
-      <blockquote>${escapeHtml(ev.text)}</blockquote>
+      <blockquote>${displayText(ev.text)}</blockquote>
     </div>`;
 }
 
@@ -81,12 +87,12 @@ function itemHtml(item, index) {
 
       <div class="description-box">
         <label>Descrição da OS</label>
-        <p>${escapeHtml(item.description || "Descrição não identificada.")}</p>
+        <p>${displayText(item.description || "Descrição não identificada.")}</p>
       </div>
 
       <details class="original-message">
         <summary>Ver mensagem original completa</summary>
-        <pre>${escapeHtml(item.originalText)}</pre>
+        <pre>${displayText(item.originalText)}</pre>
       </details>
 
       <div class="evidence-section">
