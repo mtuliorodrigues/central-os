@@ -126,6 +126,10 @@ async function processFile(file) {
     setStep(5, "Finalizando...");
     status.textContent = `${Number(analysis.totalSpreadsheetOS || imported.totalOS || 0).toLocaleString("pt-BR")} OS processadas. Organizando os resultados...`;
 
+    window.CentralOS?.data?.invalidate?.();
+    window.CentralOS?.data?.setAnalysis?.(30, analysis);
+    await window.CentralOS?.data?.getSummary?.({ force: true }).catch(() => null);
+
     await new Promise(resolve => setTimeout(resolve, 700));
     closeModal();
 
