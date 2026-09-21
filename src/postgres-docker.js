@@ -40,3 +40,31 @@ export async function readGroupHistoryFromDocker({
 
   return stdout.split(/\r?\n/).map(x => x.trim()).filter(Boolean).map(line => JSON.parse(line));
 }
+
+
+export async function listWhatsAppGroupsFromDocker({
+  container = "evolution_postgres",
+  user = "evolution",
+  database = "evolution"
+} = {}) {
+  const sql = `
+    SELECT json_build_object(
+      'remoteJid', "remoteJid",
+      'name', COALESCE(name, '')
+    )::text
+    FROM "Chat"
+    WHERE "remoteJid" LIKE '%@g.us'
+    ORDER BY COALESCE(name, ''), "remoteJid";
+  `;
+
+  const { stdout } = await execFileAsync("docker", [
+    "exec", container, "psql", "-U", user, "-d", database,
+    "-t", "-A", "-c", sql
+  ], { maxBuffer: 10 * 1024 * 1024 });
+
+  return stdout
+    .split(/\r?\n/)
+    .map(x => x.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+}
