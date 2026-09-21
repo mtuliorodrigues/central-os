@@ -1,1 +1,49 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Central OS</title><link rel="stylesheet" href="/styles.css"></head><body><main class="shell"><header><div><small>PLAY SOLUÇÕES • CENTRAL OPERACIONAL</small><h1>Central OS</h1><p>Análise de ordens de serviço pelo histórico do WhatsApp</p></div><span class="online">● Painel online</span></header><section class="hero"><small>GRUPO PILOTO</small><h2>TÉC.PLAY</h2><p>Primeira versão dedicada ao TÉC.PLAY. Os demais grupos serão adicionados depois da validação do motor.</p><code>553497702861-1601827551@g.us</code><div class="hero-actions"><a class="button" href="/possivelmente-fechadas">Possivelmente Fechadas</a><span>Confira OS com indícios de conclusão e veja as evidências.</span></div></section><section class="cards"><article><span>Mensagens analisadas</span><b>4.114</b></article><article><span>OS candidatas</span><b>1.009</b></article><article><span>Possivelmente realizadas</span><b>214</b></article><article><span>Possivelmente pendentes</span><b>326</b></article><article><span>Revisão manual</span><b>82</b></article><article><span>Sem evidência</span><b>387</b></article></section><section class="panel"><small>V1 • VALIDAÇÃO</small><h2>Como o motor está trabalhando</h2><div class="flow"><div><b>01</b><p>Identifica mensagens com estrutura de OS.</p></div><div><b>02</b><p>Relaciona respostas, marcações e encaminhamentos.</p></div><div><b>03</b><p>Analisa contexto e sinais de conclusão ou pendência.</p></div><div><b>04</b><p>Guarda a evidência usada na classificação.</p></div></div><aside><b>Em calibração</b><p>Os números são da primeira execução real. A V1 ainda será refinada para impedir associações entre OS diferentes. Nenhuma OS é fechada automaticamente.</p></aside></section><footer>Central OS • V1 • TÉC.PLAY</footer></main></body></html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03080f"><title>Dashboard • Central OS</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="app-shell"><aside class="sidebar" aria-label="Navegação principal">
+  <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
+  <nav class="navigation">
+    <div class="nav-label">Menu</div>
+    <a class="nav-link active" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
+    <a class="nav-link " href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
+    <a class="nav-link " href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
+    <a class="nav-link " href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
+    <a class="nav-link " href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
+  </nav>
+  <div class="sidebar-card">
+    <div class="sidebar-card__label">Motor local</div>
+    <div class="sidebar-card__status"><span class="pulse-dot"></span><span>TÉC.PLAY ativo</span></div>
+    <div class="sidebar-card__message">Leitura local da Evolution/PostgreSQL. Dados de clientes não são gravados no front-end público.</div>
+  </div>
+  <div class="sidebar-meta">Central OS • V1<br>Família visual Health Details</div>
+</aside><main class="main">
+<section class="topbar"><div><span class="section-kicker">Central operacional</span><h1 class="page-title">Dashboard</h1><p class="page-subtitle">Visão compacta da análise de ordens de serviço e do grupo piloto TÉC.PLAY.</p></div><div class="topbar__actions"><button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button><a class="primary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a></div></section>
+<section class="hero-panel"><div class="hero-panel__row"><div><span class="panel__kicker">Grupo piloto</span><h2>TÉC.PLAY</h2><p>Primeira versão dedicada ao histórico do TÉC.PLAY, mantendo o processamento sensível no computador local e o painel web separado.</p><span class="code-chip">553497702861-1601827551@g.us</span><div class="hero-actions"><a class="primary-button" href="/possivelmente-fechadas">Conferir fechadas</a><a class="secondary-button" href="/relatorio">Abrir relatório</a></div></div><span class="panel__badge">Histórico real</span></div></section>
+<section class="stats-grid">
+  <article class="stat-card info"><span class="stat-card__label">Mensagens analisadas</span><b class="stat-card__value">4.114</b><span class="stat-card__meta">Primeira execução real</span></article>
+  <article class="stat-card"><span class="stat-card__label">OS candidatas</span><b class="stat-card__value">1.009</b><span class="stat-card__meta">Detecção geral da V1</span></article>
+  <article class="stat-card success"><span class="stat-card__label">Possivelmente realizadas</span><b class="stat-card__value">214</b><span class="stat-card__meta">Resultado bruto inicial</span></article>
+  <article class="stat-card warning"><span class="stat-card__label">Possivelmente pendentes</span><b class="stat-card__value">326</b><span class="stat-card__meta">Exigem acompanhamento</span></article>
+  <article class="stat-card info"><span class="stat-card__label">Revisão manual</span><b class="stat-card__value">82</b><span class="stat-card__meta">Evidências conflitantes</span></article>
+  <article class="stat-card"><span class="stat-card__label">Sem evidência</span><b class="stat-card__value">387</b><span class="stat-card__meta">Sem conclusão segura</span></article>
+</section>
+<section class="dashboard-grid">
+  <article class="panel"><div class="panel__header"><div><span class="panel__kicker">Acesso rápido</span><h2>Operação</h2></div><span class="panel__badge">V1</span></div>
+    <div class="quick-actions">
+      <a class="quick-action" href="/possivelmente-fechadas"><div class="quick-action__icon">✓</div><strong>Possivelmente Fechadas</strong><span>Confirme OS com indícios de conclusão e visualize as evidências.</span></a>
+      <a class="quick-action" href="/relatorio"><div class="quick-action__icon">≡</div><strong>Relatório</strong><span>Resumo das classificações encontradas pelo motor.</span></a>
+      <a class="quick-action" href="/grupos"><div class="quick-action__icon">◎</div><strong>Grupos</strong><span>Visualize os grupos monitorados e os próximos a adicionar.</span></a>
+      <a class="quick-action" href="/configuracoes"><div class="quick-action__icon">⚙</div><strong>Configurações</strong><span>Consulte parâmetros do motor local e período de análise.</span></a>
+    </div>
+  </article>
+  <article class="panel"><div class="panel__header"><div><span class="panel__kicker">Estado atual</span><h2>Motor de análise</h2></div><span class="panel__badge">TÉC.PLAY</span></div>
+    <div class="status-list">
+      <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Leitura PostgreSQL</strong><small>Evolution local via Docker</small></div></div><span class="status-value">Configurada</span></div>
+      <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Evidências</strong><small>Resposta, contexto e sinais de conclusão</small></div></div><span class="status-value">Ativo</span></div>
+      <div class="status-row"><div class="status-row__left"><span class="status-dot warning"></span><div><strong>Calibração</strong><small>Associação entre OS em refinamento</small></div></div><span class="status-value">Em andamento</span></div>
+    </div>
+  </article>
+</section>
+<section class="panel" style="margin-top:16px"><div class="panel__header"><div><span class="panel__kicker">Fluxo</span><h2>Como a Central OS trabalha</h2></div></div>
+<div class="quick-actions"><div class="quick-action"><div class="quick-action__icon">01</div><strong>Identifica a OS</strong><span>Busca mensagens com estrutura suficiente de cliente, ID, login, serviço ou descrição.</span></div><div class="quick-action"><div class="quick-action__icon">02</div><strong>Relaciona contexto</strong><span>Prioriza respostas diretamente vinculadas e mensagens próximas com segurança.</span></div><div class="quick-action"><div class="quick-action__icon">03</div><strong>Classifica</strong><span>Procura sinais de execução, conclusão, pendência ou necessidade de revisão.</span></div><div class="quick-action"><div class="quick-action__icon">04</div><strong>Mostra a evidência</strong><span>Exibe a mensagem que sustentou a classificação para conferência humana.</span></div></div></section>
+<div class="footer">Central OS • Play Soluções • V1</div>
+</main></div><script src="/ui.js"></script></body></html>
