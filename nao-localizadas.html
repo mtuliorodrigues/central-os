@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#03080f">
+  <title>Não Localizadas • Central OS</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-page="nao-localizadas" data-view="nao-localizadas">
+<div class="app-shell">
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
+  <main class="main">
+    <section class="topbar">
+      <div>
+        <span class="section-kicker">Sem correspondência</span>
+        <h1 class="page-title">Não Localizadas</h1>
+        <p class="page-subtitle">Ordens da planilha que foram procuradas, mas não tiveram mensagem correspondente encontrada.</p>
+      </div>
+      <div class="topbar__actions">
+        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
+      </div>
+    </section>
+    <section class="panel detail-panel">
+    <div class="list-toolbar">
+      <div>
+        <span class="panel__kicker">Resultado atual</span>
+        <strong id="analysisSubtitle">Carregando análise…</strong>
+      </div>
+      <div class="list-toolbar__controls">
+        <input id="tableSearch" class="search-input" type="search" placeholder="Buscar cliente, ID, login, serviço ou grupo">
+        <label class="compact-select">Período<select id="days"><option value="20">20 dias</option><option value="30" selected>30 dias</option></select></label>
+        <button id="refresh" class="primary-button" type="button">Atualizar</button>
+      </div>
+    </div>
+    <div class="list-summary"><span id="resultCount">—</span><span id="pageStatus" class="panel__badge warning">Carregando</span></div>
+    <div class="table-wrap analysis-table-wrap">
+      <table class="data-table analysis-table">
+        <thead><tr><th>Cliente</th><th>OS / ID</th><th>Login</th><th>Serviço</th><th>Data</th><th>Status</th><th>Grupo</th><th>Evidência</th></tr></thead>
+        <tbody id="analysisBody"><tr><td colspan="8"><div class="empty-state">Carregando ordens de serviço…</div></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <script type="module" src="/analysis-list.js"></script>
+    <div class="footer">Central OS • Play Soluções</div>
+  </main>
+</div>
+<script src="/ui.js"></script>
+</body>
+</html>
