@@ -6,7 +6,12 @@ const searchEl = document.getElementById("tableSearch");
 const bodyEl = document.getElementById("analysisBody");
 const countEl = document.getElementById("resultCount");
 const statusEl = document.getElementById("pageStatus");
+const tableWrap = document.querySelector(".analysis-table-wrap");
+const PAGE_SIZE = 12;
+
 let sourceItems = [];
+let filteredItems = [];
+let currentPage = 1;
 
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
@@ -65,8 +70,9 @@ function evidenceCell(item) {
   const pieces = [];
   if (item.originalText) {
     pieces.push(
-      '<div class="evidence-preview"><strong>Mensagem localizada</strong><p>' +
-      escapeHtml(maskSensitive(item.originalText)) + '</p></div>'
+      '<div class="evidence-preview"><strong>Mensagem localizada' +
+      (item.groupName ? " • " + escapeHtml(item.groupName) : "") +
+      '</strong><p>' + escapeHtml(maskSensitive(item.originalText)) + '</p></div>'
     );
   }
   evidence.forEach(ev => {
@@ -105,22 +111,77 @@ function rowHtml(item) {
   '</tr>';
 }
 
-function applyFilter() {
+function ensurePagination() {
+  let pagination = document.getElementById("analysisPagination");
+  if (pagination) return pagination;
+
+  pagination = document.createElement("div");
+  pagination.id = "analysisPagination";
+  pagination.className = "pagination";
+  tableWrap?.insertAdjacentElement("afterend", pagination);
+  return pagination;
+}
+
+function renderPagination() {
+  const pagination = ensurePagination();
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+  if (totalPages <= 1) {
+    pagination.hidden = true;
+    pagination.innerHTML = "";
+    return;
+  }
+
+  pagination.hidden = false;
+  const buttons = [];
+  buttons.push(`<button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>Anterior</button>`);
+
+  const visible = new Set([1, totalPages, currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2]
+    .filter(page => page >= 1 && page <= totalPages));
+  let previous = 0;
+  [...visible].sort((a,b) => a-b).forEach(page => {
+    if (previous && page - previous > 1) buttons.push('<span class="pagination__ellipsis">…</span>');
+    buttons.push(`<button type="button" data-page="${page}" class="${page === currentPage ? "active" : ""}">${page}</button>`);
+    previous = page;
+  });
+
+  buttons.push(`<button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Próxima</button>`);
+  pagination.innerHTML = buttons.join("");
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = filteredItems.slice(start, start + PAGE_SIZE);
+  countEl.textContent = filteredItems.length.toLocaleString("pt-BR") + " OS";
+  bodyEl.innerHTML = pageItems.length
+    ? pageItems.map(rowHtml).join("")
+    : '<tr><td colspan="8"><div class="empty-state">Nenhuma OS encontrada com esse filtro.</div></td></tr>';
+  renderPagination();
+  tableWrap?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function applyFilter(resetPage = true) {
   const query = String(searchEl?.value || "").trim().toLowerCase();
-  const items = query ? sourceItems.filter(item => {
+  filteredItems = query ? sourceItems.filter(item => {
     const ref = item.reference || {};
     const haystack = [
       item.client, ref.client, item.osNumber, item.contractId, ref.osNumber, ref.contractId,
       item.login, ref.login, item.service, ref.service, item.groupName, statusLabel(item.classification)
     ].join(" ").toLowerCase();
     return haystack.includes(query);
-  }) : sourceItems;
+  }) : [...sourceItems];
 
-  countEl.textContent = items.length.toLocaleString("pt-BR") + " OS";
-  bodyEl.innerHTML = items.length
-    ? items.map(rowHtml).join("")
-    : '<tr><td colspan="8"><div class="empty-state">Nenhuma OS encontrada com esse filtro.</div></td></tr>';
+  if (resetPage) currentPage = 1;
+  renderPage();
 }
+
+ensurePagination().addEventListener("click", event => {
+  const button = event.target.closest("button[data-page]");
+  if (!button || button.disabled) return;
+  currentPage = Number(button.dataset.page || 1);
+  renderPage();
+});
 
 async function load() {
   const days = Number(daysEl?.value || 30);
@@ -136,21 +197,24 @@ async function load() {
     const subtitle = document.getElementById("analysisSubtitle");
     if (subtitle) subtitle.textContent = Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR") +
       " OS da planilha • " + Number(data.totalMatched || 0).toLocaleString("pt-BR") + " localizadas";
-    applyFilter();
+    applyFilter(true);
   } catch (error) {
     sourceItems = [];
+    filteredItems = [];
     if (error?.code === "spreadsheet_required") {
       statusEl.textContent = "Planilha necessária";
-      bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><a class="primary-button" href="/importar-planilha">Importar Planilha</a></div></td></tr>';
+      bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><button class="primary-button" data-import-planilha type="button">Importar Planilha</button></div></td></tr>';
+      ensurePagination().hidden = true;
       return;
     }
     statusEl.textContent = "Indisponível";
     statusEl.className = "panel__badge danger";
     bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state error-state">Não foi possível atualizar a análise agora.</div></td></tr>';
+    ensurePagination().hidden = true;
   }
 }
 
 document.getElementById("refresh")?.addEventListener("click", load);
 daysEl?.addEventListener("change", load);
-searchEl?.addEventListener("input", applyFilter);
+searchEl?.addEventListener("input", () => applyFilter(true));
 load();
