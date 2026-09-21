@@ -2241,3 +2241,237 @@ body{
     font-size:15px;
   }
 }
+
+
+/* Superfície principal responsiva — aproveita melhor a área útil */
+.main{
+  padding-left:clamp(18px,2vw,34px);
+  padding-right:clamp(18px,2vw,34px);
+}
+.main > .topbar,
+.main > .page-surface,
+.main > .footer{
+  width:min(96%,1760px);
+  max-width:1760px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.main > .topbar{
+  margin-bottom:22px;
+  text-align:left;
+}
+.main > .topbar > div:first-child{
+  margin-left:0;
+  margin-right:auto;
+  text-align:left;
+}
+.page-title,
+.page-subtitle,
+.section-kicker{
+  text-align:left;
+}
+
+.page-surface{
+  position:relative;
+  padding:clamp(20px,2vw,32px);
+  border:1px solid rgba(20,214,154,.11);
+  border-radius:28px;
+  background:
+    radial-gradient(circle at 92% 4%,rgba(20,214,154,.045),transparent 28%),
+    linear-gradient(180deg,rgba(8,20,30,.76),rgba(5,14,22,.68));
+  box-shadow:
+    0 18px 54px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.025);
+  overflow:hidden;
+}
+.page-surface::before{
+  content:"";
+  position:absolute;
+  inset:0 auto auto 0;
+  width:42%;
+  height:1px;
+  background:linear-gradient(90deg,rgba(20,214,154,.30),rgba(20,214,154,.06),transparent);
+  pointer-events:none;
+}
+.page-surface > *{
+  position:relative;
+  z-index:1;
+}
+.page-surface > .panel,
+.page-surface > .content-columns,
+.page-surface > .dashboard-layout,
+.page-surface > .summary-row{
+  width:100%;
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+}
+
+/* Dashboard: dois blocos grandes ocupando a superfície por completo */
+.page-surface--dashboard{
+  padding:clamp(22px,2.2vw,36px);
+}
+.page-surface--dashboard .dashboard-layout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(20px,2vw,32px);
+  align-items:stretch;
+}
+.page-surface--dashboard .dashboard-primary,
+.page-surface--dashboard .dashboard-future{
+  min-width:0;
+  min-height:100%;
+  padding:clamp(22px,2vw,30px);
+}
+.page-surface--dashboard .dashboard-primary{
+  display:flex;
+  flex-direction:column;
+}
+.page-surface--dashboard .dashboard-summary{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin:0;
+}
+.page-surface--dashboard .dashboard-bottom{
+  margin-top:18px;
+  width:100%;
+}
+.page-surface--dashboard .dashboard-future{
+  display:grid;
+  place-items:center;
+}
+.page-surface--dashboard .dashboard-future__content{
+  max-width:440px;
+  padding:clamp(30px,4vw,58px);
+}
+.page-surface--dashboard .dashboard-future__content h2{
+  font-size:clamp(32px,3vw,44px);
+}
+.page-surface--dashboard .dashboard-future__content p{
+  font-size:16px;
+}
+
+/* As páginas internas usam toda a largura disponível da superfície */
+.page-surface .detail-panel,
+.page-surface .closed-panel{
+  width:100%;
+  max-width:none;
+}
+.page-surface .detail-panel{
+  height:min(720px,calc(100dvh - 260px));
+  min-height:520px;
+}
+.page-surface .closed-panel{
+  height:min(740px,calc(100dvh - 335px));
+  min-height:540px;
+}
+.page-surface .analysis-table-wrap,
+.page-surface .history-table-wrap,
+.page-surface .closed-list{
+  width:100%;
+}
+.page-surface .analysis-table,
+.page-surface .history-detail-table{
+  width:100%;
+}
+
+/* Legibilidade preservada no espaço maior */
+.page-surface .data-table{
+  font-size:17px;
+}
+.page-surface .data-table th{
+  font-size:14.5px;
+  padding:15px 17px;
+}
+.page-surface .data-table td{
+  font-size:17px;
+  padding:16px 17px;
+  line-height:1.58;
+}
+.page-surface .data-table td:first-child strong{
+  font-size:17.5px;
+}
+.page-surface .search-input,
+.page-surface .compact-select select,
+.page-surface .filterbar select{
+  font-size:15.5px;
+}
+.page-surface .status-pill{
+  font-size:13.5px;
+}
+.page-surface .evidence-preview p,
+.page-surface .history-evidence p{
+  font-size:15px;
+}
+.page-surface .pagination button{
+  min-width:46px;
+  height:44px;
+  font-size:14.5px;
+}
+
+/* Configurações e grupos também respiram dentro do card-base */
+.page-surface .content-columns{
+  gap:clamp(18px,2vw,28px);
+}
+.page-surface .group-grid{
+  width:100%;
+}
+
+/* Breakpoints fluidos, sem depender de um monitor específico */
+@media(max-width:1400px){
+  .main > .topbar,
+  .main > .page-surface,
+  .main > .footer{
+    width:min(97%,1540px);
+  }
+  .page-surface--dashboard .dashboard-layout{
+    gap:20px;
+  }
+}
+@media(max-width:1120px){
+  .main > .topbar,
+  .main > .page-surface,
+  .main > .footer{
+    width:100%;
+    max-width:none;
+  }
+  .page-surface--dashboard .dashboard-layout{
+    grid-template-columns:1fr;
+  }
+  .page-surface--dashboard .dashboard-future{
+    min-height:300px;
+  }
+}
+@media(max-width:820px){
+  .main{
+    padding-left:16px;
+    padding-right:16px;
+  }
+  .page-surface{
+    padding:16px;
+    border-radius:22px;
+  }
+  .page-surface .detail-panel,
+  .page-surface .closed-panel{
+    height:auto;
+    min-height:0;
+  }
+  .page-surface .analysis-table-wrap,
+  .page-surface .history-table-wrap,
+  .page-surface .closed-list{
+    height:min(58vh,560px);
+  }
+}
+@media(max-width:620px){
+  .page-surface{
+    padding:12px;
+    border-radius:18px;
+  }
+  .page-surface--dashboard .dashboard-primary,
+  .page-surface--dashboard .dashboard-future{
+    padding:18px;
+  }
+  .page-surface--dashboard .dashboard-summary{
+    grid-template-columns:1fr;
+  }
+}
