@@ -59,8 +59,8 @@ function itemHtml(item, index) {
       : escapeHtml(item.osIdentification);
 
   return `
-    <article class="closed-card">
-      <div class="closed-card-head">
+    <article class="os-card">
+      <div class="os-card__head">
         <div>
           <span class="candidate-number">#${index + 1}</span>
           <h3>${escapeHtml(item.client)}</h3>
