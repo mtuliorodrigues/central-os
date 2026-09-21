@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#03080f">
+  <title>Histórico • Central OS</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body data-page="historico" >
+<div class="app-shell">
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
+  <main class="main">
+    <section class="topbar">
+      <div>
+        <span class="section-kicker">Análises anteriores</span>
+        <h1 class="page-title">Histórico</h1>
+        <p class="page-subtitle">Importações e resultados registrados ao longo do uso da Central OS.</p>
+      </div>
+      <div class="topbar__actions">
+        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
+      </div>
+    </section>
+    <section class="panel detail-panel">
+    <div class="panel__header"><div><span class="panel__kicker">Registros</span><h2>Análises e importações</h2></div><span id="historyCount" class="panel__badge info">Carregando</span></div>
+    <div class="table-wrap analysis-table-wrap">
+      <table class="data-table history-table">
+        <thead><tr><th>Importada em</th><th>Planilha</th><th>OS</th><th>Localizadas</th><th>Não localizadas</th><th>Fechadas</th><th>Pendentes</th><th>Período</th><th>Grupos</th><th>Analisada em</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="10"><div class="empty-state">Carregando histórico…</div></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <script type="module" src="/historico.js"></script>
+    <div class="footer">Central OS • Play Soluções</div>
+  </main>
+</div>
+<script src="/ui.js"></script>
+</body>
+</html>
