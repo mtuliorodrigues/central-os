@@ -28,7 +28,7 @@ function renderSidebar() {
   if (!sidebar) return;
   sidebar.innerHTML = `
     <a class="brand" href="/" title="Central OS">
-      <span class="brand__icon"><img class="brand__logo" src="/assets/central-os-logo.png" alt="" aria-hidden="true"></span>
+      <span class="brand__icon"><img class="brand__logo" src="/assets/central-os-logo.svg" alt="" aria-hidden="true"></span>
       <span class="brand__copy"><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span>
     </a>
     <nav class="navigation">
