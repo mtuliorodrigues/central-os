@@ -7,11 +7,16 @@ const bodyEl = document.getElementById("analysisBody");
 const countEl = document.getElementById("resultCount");
 const statusEl = document.getElementById("pageStatus");
 const tableWrap = document.querySelector(".analysis-table-wrap");
-const PAGE_SIZE = 12;
+const pageSizeEl = document.getElementById("pageSize");
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20];
+const savedPageSize = Number(localStorage.getItem("centralOSPageSize") || 10);
 
+let pageSize = PAGE_SIZE_OPTIONS.includes(savedPageSize) ? savedPageSize : 10;
 let sourceItems = [];
 let filteredItems = [];
 let currentPage = 1;
+
+if (pageSizeEl) pageSizeEl.value = String(pageSize);
 
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
@@ -122,7 +127,7 @@ function ensurePagination() {
 
 function renderPagination() {
   const pagination = ensurePagination();
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   currentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   if (totalPages <= 1) {
@@ -149,8 +154,8 @@ function renderPagination() {
 }
 
 function renderPage() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageItems = filteredItems.slice(start, start + PAGE_SIZE);
+  const start = (currentPage - 1) * pageSize;
+  const pageItems = filteredItems.slice(start, start + pageSize);
   countEl.textContent = filteredItems.length.toLocaleString("pt-BR") + " OS";
   bodyEl.innerHTML = pageItems.length
     ? pageItems.map(rowHtml).join("")
@@ -241,4 +246,11 @@ async function load(force = false) {
 document.getElementById("refresh")?.addEventListener("click", () => load(true));
 daysEl?.addEventListener("change", () => load(false));
 searchEl?.addEventListener("input", () => applyFilter(true));
+pageSizeEl?.addEventListener("change", () => {
+  const next = Math.min(20, Math.max(5, Number(pageSizeEl.value || 10)));
+  pageSize = PAGE_SIZE_OPTIONS.includes(next) ? next : 10;
+  localStorage.setItem("centralOSPageSize", String(pageSize));
+  currentPage = 1;
+  renderPage();
+});
 load();
