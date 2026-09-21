@@ -44,6 +44,12 @@
   </article>
 </section>
 <section class="panel" style="margin-top:16px"><div class="panel__header"><div><span class="panel__kicker">Fluxo</span><h2>Como a Central OS trabalha</h2></div></div>
-<div class="quick-actions"><div class="quick-action"><div class="quick-action__icon">01</div><strong>Identifica a OS</strong><span>Busca mensagens com estrutura suficiente de cliente, ID, login, serviço ou descrição.</span></div><div class="quick-action"><div class="quick-action__icon">02</div><strong>Relaciona contexto</strong><span>Prioriza respostas diretamente vinculadas e mensagens próximas com segurança.</span></div><div class="quick-action"><div class="quick-action__icon">03</div><strong>Classifica</strong><span>Procura sinais de execução, conclusão, pendência ou necessidade de revisão.</span></div><div class="quick-action"><div class="quick-action__icon">04</div><strong>Mostra a evidência</strong><span>Exibe a mensagem que sustentou a classificação para conferência humana.</span></div></div></section>
+<div class="flow-grid">
+  <div class="quick-action flow-step flow-step--source"><div class="quick-action__icon">01</div><strong>Usa a planilha como referência</strong><span>A planilha importada define quais ordens de serviço devem ser analisadas e serve como ponto de partida da busca.</span></div>
+  <div class="quick-action flow-step"><div class="quick-action__icon">02</div><strong>Identifica a OS no grupo</strong><span>Para cada OS da planilha, procura a mensagem correspondente usando cliente, ID, login, serviço, descrição ou outros dados disponíveis.</span></div>
+  <div class="quick-action flow-step"><div class="quick-action__icon">03</div><strong>Relaciona contexto</strong><span>Prioriza respostas diretamente vinculadas e mensagens próximas que possam indicar o que aconteceu com o atendimento.</span></div>
+  <div class="quick-action flow-step"><div class="quick-action__icon">04</div><strong>Classifica</strong><span>Procura sinais de execução, conclusão, pendência ou necessidade de revisão.</span></div>
+  <div class="quick-action flow-step"><div class="quick-action__icon">05</div><strong>Mostra a evidência</strong><span>Exibe a mensagem ou conjunto de mensagens que sustentaram a classificação para conferência humana.</span></div>
+</div></section>
 <div class="footer">Central OS • Play Soluções • V1</div>
 </main></div><script src="/ui.js"></script></body></html>
