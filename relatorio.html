@@ -21,45 +21,45 @@
       <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
     </nav>
     <div class="sidebar-card">
-      <div class="sidebar-card__label">Referência ativa</div>
+      <div class="sidebar-card__label">Referência atual</div>
       <div class="sidebar-card__status"><span class="pulse-dot"></span><span id="sidebarSpreadsheet">Verificando planilha…</span></div>
-      <div class="sidebar-card__message">O relatório é calculado somente sobre as OS presentes na planilha importada.</div>
+      <div class="sidebar-card__message">O relatório considera somente as ordens presentes na planilha importada.</div>
     </div>
-    <div class="sidebar-meta">Central OS • V1<br>Play Soluções</div>
+    <div class="sidebar-meta">Central OS • Play Soluções</div>
   </aside>
 
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Análise das OS da planilha</span>
+        <span class="section-kicker">Acompanhamento</span>
         <h1 class="page-title">Relatório</h1>
-        <p class="page-subtitle">A planilha define as OS analisadas; o TÉC.PLAY fornece a mensagem original, o contexto e as evidências.</p>
+        <p class="page-subtitle">Veja o resultado da análise das ordens de serviço definidas pela planilha.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
         <div class="filterbar"><label for="reportDays">Período<select id="reportDays"><option value="20">20 dias</option><option value="30" selected>30 dias</option></select></label></div>
-        <button id="reportRefresh" class="primary-button" type="button">Analisar</button>
+        <button id="reportRefresh" class="primary-button" type="button">Atualizar análise</button>
       </div>
     </section>
 
     <section class="hero-panel">
       <div class="hero-panel__row">
         <div>
-          <span class="panel__kicker">Fluxo em produção</span>
-          <h2 id="reportTitle">Planilha → TÉC.PLAY → classificação</h2>
-          <p id="reportSubtitle">Carregando a referência atual e preparando a análise.</p>
+          <span class="panel__kicker">Resumo</span>
+          <h2 id="reportTitle">Ordens da planilha em acompanhamento</h2>
+          <p id="reportSubtitle">Carregando a referência atual.</p>
         </div>
-        <span id="reportBadge" class="panel__badge warning">Aguardando motor</span>
+        <span id="reportBadge" class="panel__badge warning">Carregando</span>
       </div>
     </section>
 
     <section class="stats-grid">
       <article class="stat-card success"><span class="stat-card__label">OS na planilha</span><b id="statSpreadsheet" class="stat-card__value">—</b><span class="stat-card__meta">Referência principal</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Localizadas no grupo</span><b id="statMatched" class="stat-card__value">—</b><span class="stat-card__meta">Correspondência encontrada</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Localizadas nos grupos</span><b id="statMatched" class="stat-card__value">—</b><span class="stat-card__meta">Mensagens relacionadas encontradas</span></article>
       <article class="stat-card success"><span class="stat-card__label">Possivelmente realizadas</span><b id="statDone" class="stat-card__value">—</b><span class="stat-card__meta">Indícios de conclusão</span></article>
       <article class="stat-card warning"><span class="stat-card__label">Possivelmente pendentes</span><b id="statPending" class="stat-card__value">—</b><span class="stat-card__meta">Indícios de pendência</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Revisão manual</span><b id="statReview" class="stat-card__value">—</b><span class="stat-card__meta">Sinais conflitantes</span></article>
-      <article class="stat-card danger"><span class="stat-card__label">Não localizadas</span><b id="statMissing" class="stat-card__value">—</b><span class="stat-card__meta">Sem correspondência segura</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Revisão manual</span><b id="statReview" class="stat-card__value">—</b><span class="stat-card__meta">Necessitam conferência</span></article>
+      <article class="stat-card danger"><span class="stat-card__label">Não localizadas</span><b id="statMissing" class="stat-card__value">—</b><span class="stat-card__meta">Sem referência encontrada no período</span></article>
     </section>
 
     <section class="content-columns">
@@ -70,24 +70,20 @@
         </div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>Classificação</th><th>Quantidade</th><th>Como interpretar</th></tr></thead>
-            <tbody id="reportTableBody">
-              <tr><td colspan="3">Aguardando análise.</td></tr>
-            </tbody>
+            <thead><tr><th>Classificação</th><th>Quantidade</th><th>Descrição</th></tr></thead>
+            <tbody id="reportTableBody"><tr><td colspan="3">Aguardando análise.</td></tr></tbody>
           </table>
         </div>
       </article>
 
       <aside class="panel">
         <div class="panel__header"><div><span class="panel__kicker">Referência</span><h2>Planilha atual</h2></div></div>
-        <div id="spreadsheetInfo" class="status-list">
-          <div class="empty-state">Consultando planilha importada…</div>
-        </div>
+        <div id="spreadsheetInfo" class="status-list"><div class="empty-state">Consultando planilha importada…</div></div>
         <div class="hero-actions"><a class="secondary-button" href="/importar-planilha">Trocar planilha</a><a class="primary-button" href="/possivelmente-fechadas">Ver fechadas</a></div>
       </aside>
     </section>
 
-    <div class="footer">Central OS • Relatório • Planilha como referência</div>
+    <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
