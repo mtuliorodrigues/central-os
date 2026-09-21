@@ -1,21 +1,23 @@
 const DONE = [
-  /\bfeito\b/i, /\bfeito hoje\b/i, /\bconclu[ií]d[oa]\b/i, /\bfinalizad[oa]\b/i,
-  /\bresolvid[oa]\b/i, /\bnormalizad[oa]\b/i, /\bfoi feito\b/i, /\bfoi realizado\b/i,
-  /\brealizad[oa]\b/i, /\btrocad[oa]\b/i, /\binstalad[oa]\b/i, /\bcliente ok\b/i
+  /\bfeita\b/i, /\bfeito\b/i, /\bfoi feita\b/i, /\bfoi feito\b/i,
+  /\bfinalizei\b/i, /\bfinalizad[oa]\b/i, /\bconclu[ií]d[oa]\b/i,
+  /\bresolvid[oa]\b/i, /\bnormalizad[oa]\b/i, /\brealizad[oa]\b/i,
+  /\btrocad[oa]\b/i, /\binstalad[oa]\b/i, /\bcliente ok\b/i
 ];
 const PENDING = [
-  /\bpendente\b/i, /\bn[aã]o foi feito\b/i, /\bn[aã]o realizado\b/i,
-  /\breagendar\b/i, /\bsem acesso\b/i, /\bn[aã]o atendeu\b/i, /\baguardando\b/i
+  /\bpendente\b/i, /\bn[aã]o foi feit[oa]\b/i, /\bn[aã]o realizad[oa]\b/i,
+  /\breagendar\b/i, /\bagendar\b/i, /\bsem acesso\b/i,
+  /\bn[aã]o atendeu\b/i, /\baguardando\b/i
 ];
 
-function textOf(m) {
+export function textOf(m) {
   const x = m?.message ?? m;
   return x?.conversation || x?.extendedTextMessage?.text || x?.imageMessage?.caption ||
     x?.documentMessage?.caption || x?.videoMessage?.caption || m?.text || "";
 }
 function ctxOf(m) {
   const x = m?.message ?? m;
-  return x?.extendedTextMessage?.contextInfo || x?.imageMessage?.contextInfo ||
+  return m?.contextInfo || x?.extendedTextMessage?.contextInfo || x?.imageMessage?.contextInfo ||
     x?.documentMessage?.contextInfo || x?.videoMessage?.contextInfo || {};
 }
 function idOf(m) { return m?.key?.id || m?.id || ""; }
@@ -27,7 +29,7 @@ function quotedText(ctx) {
     q.documentMessage?.caption || "";
 }
 function looksLikeOS(text) {
-  return /(?:\bOS\b|ordem de servi[cç]o|\*Cliente:\*|\bCliente:\s|\*Servi[cç]o:\*)/i.test(text);
+  return /(?:\bO\.?S\.?\b|ordem de servi[cç]o|\*Cliente:\*|\bCliente:\s|\*Servi[cç]o:\*|Nome\/Raz[aã]o Social:|\bCliente ID:|🆔)/i.test(text);
 }
 function relation(m) {
   const c = ctxOf(m);
@@ -48,12 +50,16 @@ export function analyzeHistory(messages, { before = 3, after = 8 } = {}) {
     const root = ordered[i];
     const rootText = textOf(root);
     const rootId = idOf(root);
-    const window = ordered.slice(Math.max(0, i-before), Math.min(ordered.length, i+after+1));
-    const linked = window.filter(m => {
+    const start = Math.max(0, i-before);
+    const end = Math.min(ordered.length, i+after+1);
+    const nearby = ordered.slice(start, end).filter(m => m !== root);
+    const replies = ordered.filter(m => {
       if (m === root) return false;
       const c = ctxOf(m);
-      return c?.stanzaId === rootId || quotedText(c) === rootText || relation(m) || true;
+      return c?.stanzaId === rootId || (rootText && quotedText(c) === rootText);
     });
+    const linkedMap = new Map([...nearby, ...replies].map(m => [idOf(m) || `${tsOf(m)}:${senderOf(m)}:${textOf(m)}`, m]));
+    const linked = [...linkedMap.values()];
 
     const ev = [evidence(root, "Mensagem identificada como possível OS.", relation(root) || "os")];
     let done = 0, pending = 0;
@@ -63,24 +69,18 @@ export function analyzeHistory(messages, { before = 3, after = 8 } = {}) {
       const d = DONE.some(r => r.test(t));
       const p = PENDING.some(r => r.test(t));
       const rel = relation(m);
-      if (d) { done += 2; ev.push(evidence(m, "Indício textual de serviço realizado.", rel || "contexto")); }
-      else if (p) { pending += 2; ev.push(evidence(m, "Indício textual de pendência.", rel || "contexto")); }
-      else if (rel) ev.push(evidence(m, `Mensagem relacionada à OS por ${rel}.`, rel));
+      const weight = rel === "resposta" ? 3 : 2;
+      if (d) { done += weight; ev.push(evidence(m, "Indício textual de serviço realizado.", rel || "contexto")); }
+      if (p) { pending += weight; ev.push(evidence(m, "Indício textual de pendência.", rel || "contexto")); }
+      if (!d && !p && rel) ev.push(evidence(m, `Mensagem relacionada à OS por ${rel}.`, rel));
     }
 
     let classification = "sem_evidencia";
     let confidence = "baixa";
-    if (done > pending && done >= 2) { classification = "possivelmente_realizada"; confidence = done >= 4 ? "alta" : "media"; }
-    else if (pending > done && pending >= 2) { classification = "possivelmente_pendente"; confidence = pending >= 4 ? "alta" : "media"; }
+    if (done > pending && done >= 2) { classification = "possivelmente_realizada"; confidence = done >= 3 ? "alta" : "media"; }
+    else if (pending > done && pending >= 2) { classification = "possivelmente_pendente"; confidence = pending >= 3 ? "alta" : "media"; }
     else if (done && pending) { classification = "revisao_manual"; confidence = "media"; }
 
-    return {
-      osMessageId: rootId,
-      osText: rootText,
-      osTimestamp: tsOf(root),
-      classification,
-      confidence,
-      evidence: ev
-    };
+    return { osMessageId: rootId, osText: rootText, osTimestamp: tsOf(root), classification, confidence, scores: { done, pending }, evidence: ev };
   });
 }
