@@ -1,17 +1,23 @@
 import { localApiFetch } from "/local-api.js";
 
-const page = document.body.dataset.page || "dashboard";
-if (page !== "importar") {
+function ensureImportButton() {
+  const currentPage = document.body.dataset.page || "dashboard";
   const actions = document.querySelector(".topbar__actions");
-  if (actions && !actions.querySelector("[data-import-planilha]")) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "secondary-button global-import-button";
-    button.dataset.importPlanilha = "";
-    button.textContent = "Importar planilha";
-    actions.appendChild(button);
-  }
+  if (!actions) return;
+
+  actions.querySelectorAll(".global-import-button").forEach(button => button.remove());
+  if (currentPage === "importar") return;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary-button global-import-button";
+  button.dataset.importPlanilha = "";
+  button.textContent = "Importar planilha";
+  actions.appendChild(button);
 }
+
+ensureImportButton();
+window.addEventListener("centralos:navigated", ensureImportButton);
 
 const fileInput = document.createElement("input");
 fileInput.type = "file";
@@ -68,11 +74,12 @@ function setStep(index, message) {
     element.classList.toggle("is-active", current === index);
     element.classList.toggle("is-done", current < index);
   });
-  progress.style.width = Math.max(5, ((index + 1) / stepEls.length) * 100) + "%";
+  progress.style.width = Math.max(6, ((index + 1) / stepEls.length) * 100) + "%";
   status.textContent = message || stepEls[index]?.querySelector("strong")?.textContent || "Processando...";
 }
 
 function openModal(file) {
+  status.classList.remove("is-error");
   fileName.textContent = file?.name || "";
   closeButton.hidden = true;
   modal.hidden = false;
@@ -107,20 +114,26 @@ async function processFile(file) {
 
     setStep(2, "Procurando informações nos grupos...");
     let analysisDone = false;
-    const analysisPromise = localApiFetch("/api/analise/processar", { method: "POST" }).finally(() => { analysisDone = true; });
+    const analysisPromise = localApiFetch("/api/analise/processar", { method: "POST" })
+      .finally(() => { analysisDone = true; });
 
-    await new Promise(resolve => setTimeout(resolve, 450));
+    await new Promise(resolve => setTimeout(resolve, 500));
     if (!analysisDone) setStep(3, "Analisando contexto...");
-    await new Promise(resolve => setTimeout(resolve, 550));
+    await new Promise(resolve => setTimeout(resolve, 650));
     if (!analysisDone) setStep(4, "Gerando relatório...");
 
     const analysis = await analysisPromise;
     setStep(5, "Finalizando...");
-    status.textContent = `${Number(analysis.totalSpreadsheetOS || imported.totalOS || 0).toLocaleString("pt-BR")} OS processadas. Atualizando a Central OS...`;
+    status.textContent = `${Number(analysis.totalSpreadsheetOS || imported.totalOS || 0).toLocaleString("pt-BR")} OS processadas. Organizando os resultados...`;
 
-    await new Promise(resolve => setTimeout(resolve, 650));
+    await new Promise(resolve => setTimeout(resolve, 700));
     closeModal();
-    window.location.reload();
+
+    if (window.CentralOS?.refresh) {
+      await window.CentralOS.refresh();
+    } else {
+      window.location.reload();
+    }
   } catch (error) {
     stepEls.forEach(element => element.classList.remove("is-active"));
     status.textContent = error?.message || "Não foi possível concluir o processamento.";
