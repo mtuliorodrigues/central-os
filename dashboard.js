@@ -9,19 +9,42 @@ const ids = {
   pending: "pendingCount"
 };
 
+function setLoading(loading) {
+  Object.values(ids).forEach(id => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.classList.toggle("skeleton-number", loading);
+    if (loading) element.textContent = "";
+  });
+}
+
 function setCounts(counts = {}) {
   Object.entries(ids).forEach(([key, id]) => {
     const element = document.getElementById(id);
-    if (element) element.textContent = Number(counts[key] || 0).toLocaleString("pt-BR");
+    if (element) {
+      element.classList.remove("skeleton-number");
+      element.textContent = Number(counts[key] || 0).toLocaleString("pt-BR");
+    }
   });
+}
+
+async function getSummary(force = false) {
+  const shared = window.CentralOS?.data;
+  const cached = !force ? shared?.peekSummary?.() : null;
+  if (cached) return cached;
+  if (shared?.getSummary) return shared.getSummary({ force });
+  return localApiFetch("/api/resumo");
 }
 
 async function loadSummary() {
   const file = document.getElementById("dashboardFile");
   const updated = document.getElementById("dashboardUpdated");
+  const immediate = window.CentralOS?.data?.peekSummary?.();
+
+  if (!immediate) setLoading(true);
 
   try {
-    const data = await localApiFetch("/api/resumo");
+    const data = immediate || await getSummary(false);
     setCounts(data.counts);
 
     if (!data.imported) {
