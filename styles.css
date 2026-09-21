@@ -3699,3 +3699,30 @@ body[data-page="dashboard"] .dashboard-brand-header .page-title::after{
   margin-left:auto!important;
   margin-right:auto!important;
 }
+
+
+/* Possivelmente Fechadas: tabela compacta no mesmo padrão visual do Histórico */
+body[data-page="fechadas"] .closed-table-wrap{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+}
+body[data-page="fechadas"] .closed-table{
+  width:100%;
+  min-width:1040px;
+}
+body[data-page="fechadas"] .closed-table th:nth-child(1){min-width:220px}
+body[data-page="fechadas"] .closed-table th:nth-child(2){min-width:150px}
+body[data-page="fechadas"] .closed-table th:nth-child(3){min-width:210px}
+body[data-page="fechadas"] .closed-table th:nth-child(4){min-width:180px}
+body[data-page="fechadas"] .closed-table th:nth-child(5){min-width:230px}
+body[data-page="fechadas"] .closed-table th:nth-child(6){min-width:120px}
+body[data-page="fechadas"] .closed-status-cell{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+body[data-page="fechadas"] .closed-table td:last-child{
+  text-align:right;
+}
