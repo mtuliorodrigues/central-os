@@ -2820,12 +2820,12 @@ body{overflow:hidden;font-size:17.5px}
   animation:titleUnderlineFlow 6s linear infinite;
 }
 @keyframes titleGradient{
-  from{background-position:0% 50%}
-  to{background-position:200% 50%}
+  from{background-position:200% 50%}
+  to{background-position:0% 50%}
 }
 @keyframes titleUnderlineFlow{
-  from{background-position:0% 50%}
-  to{background-position:200% 50%}
+  from{background-position:200% 50%}
+  to{background-position:0% 50%}
 }
 
 /* Card-base com contorno neon animado e discreto */
@@ -2866,8 +2866,8 @@ body{overflow:hidden;font-size:17.5px}
   opacity:.72;
 }
 @keyframes surfaceBorderFlow{
-  from{background-position:0% 50%}
-  to{background-position:200% 50%}
+  from{background-position:200% 50%}
+  to{background-position:0% 50%}
 }
 
 /* Profundidade sutil entre fundo, card-base, blocos e cards internos */
