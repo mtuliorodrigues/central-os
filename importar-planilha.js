@@ -37,12 +37,11 @@ function fileToBase64(file) {
 
 function renderCurrent(data) {
   const imported = Boolean(data?.imported);
-  document.getElementById("currentBadge").textContent = imported ? "Pronta" : "Não importada";
+  document.getElementById("currentBadge").textContent = imported ? "Pronta" : "Sem planilha";
   document.getElementById("currentBadge").className = imported ? "panel__badge" : "panel__badge warning";
   document.getElementById("currentFile").textContent = imported ? data.fileName : "Nenhuma planilha ativa";
   document.getElementById("currentCount").textContent = imported ? Number(data.totalOS || 0).toLocaleString("pt-BR") : "0";
   document.getElementById("currentDate").textContent = imported ? formatDate(data.importedAt) : "—";
-
   if (imported && data.preview?.length) renderResult(data);
 }
 
@@ -81,13 +80,13 @@ function renderResult(data) {
 async function loadStatus() {
   try {
     const data = await localApiFetch("/api/planilha/status");
-    engineBadge.textContent = "Motor local conectado";
+    engineBadge.textContent = "Disponível";
     engineBadge.className = "panel__badge";
     renderCurrent(data);
   } catch {
-    engineBadge.textContent = "Motor local indisponível";
+    engineBadge.textContent = "Indisponível";
     engineBadge.className = "panel__badge danger";
-    document.getElementById("currentBadge").textContent = "Offline";
+    document.getElementById("currentBadge").textContent = "Indisponível";
     document.getElementById("currentBadge").className = "panel__badge danger";
   }
 }
@@ -142,7 +141,7 @@ importButton.addEventListener("click", async () => {
 
   importButton.disabled = true;
   importButton.textContent = "Importando…";
-  importStatus.textContent = "Lendo a planilha e identificando as OS…";
+  importStatus.textContent = "Lendo a planilha e identificando as ordens de serviço…";
   importStatus.className = "inline-status is-loading";
 
   try {
@@ -153,15 +152,15 @@ importButton.addEventListener("click", async () => {
       body: JSON.stringify({ fileName: file.name, dataBase64 })
     });
 
-    importStatus.textContent = `Planilha importada com sucesso. ${data.totalOS} OS agora são a referência principal da Central OS.`;
+    importStatus.textContent = `Planilha importada com sucesso. ${data.totalOS} OS serão usadas na análise.`;
     importStatus.className = "inline-status is-success";
     renderCurrent(data);
   } catch (error) {
-    importStatus.textContent = error?.message || "Falha ao importar a planilha.";
+    importStatus.textContent = error?.message || "Não foi possível importar a planilha.";
     importStatus.className = "inline-status is-error";
   } finally {
     importButton.disabled = false;
-    importButton.textContent = "Importar e usar como referência";
+    importButton.textContent = "Importar planilha";
   }
 });
 
