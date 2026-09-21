@@ -3517,3 +3517,20 @@ body[data-page="dashboard"] .main > .topbar{
   background-size:200% 100%;
   animation:titleUnderlineFlow 6s linear infinite;
 }
+
+
+/* Dois ajustes finais: card-pai do Dashboard e integração visual da marca */
+@media(min-width:821px){
+  body[data-page="dashboard"] .main > .page-surface--dashboard{
+    margin-top:-14px;
+    padding-top:calc(clamp(18px,1.6vw,30px) + 14px);
+  }
+}
+
+.brand__icon{
+  background:transparent!important;
+}
+.brand__logo{
+  background:transparent!important;
+  mix-blend-mode:screen;
+}
