@@ -3726,3 +3726,26 @@ body[data-page="fechadas"] .closed-status-cell{
 body[data-page="fechadas"] .closed-table td:last-child{
   text-align:right;
 }
+
+
+/* Dashboard: altura definitivamente guiada pelo conteúdo, sem preenchimento da viewport */
+body[data-page="dashboard"] .main > .page-surface--dashboard{
+  flex:none!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-layout{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-primary,
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-future{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+body[data-page="dashboard"] .page-surface--dashboard .dashboard-summary{
+  flex:0 0 auto!important;
+}
