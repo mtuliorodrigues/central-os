@@ -21,19 +21,19 @@
       <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
     </nav>
     <div class="sidebar-card">
-      <div class="sidebar-card__label">Etapa 01</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Planilha de referência</span></div>
-      <div class="sidebar-card__message">A planilha define quais OS entram na análise. O arquivo é processado pelo motor local.</div>
+      <div class="sidebar-card__label">Nova análise</div>
+      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Planilha necessária</span></div>
+      <div class="sidebar-card__message">A planilha define quais ordens de serviço serão acompanhadas.</div>
     </div>
-    <div class="sidebar-meta">Central OS • V1<br>Play Soluções</div>
+    <div class="sidebar-meta">Central OS • Play Soluções</div>
   </aside>
 
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Etapa 01 • Referência das OS</span>
+        <span class="section-kicker">Primeiro passo</span>
         <h1 class="page-title">Importar Planilha</h1>
-        <p class="page-subtitle">Selecione o arquivo exportado do SGP. As OS presentes nele passam a ser a referência principal para a busca no grupo do WhatsApp.</p>
+        <p class="page-subtitle">Selecione a planilha com as ordens de serviço abertas. Ela será usada como referência em toda a análise.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
@@ -44,19 +44,19 @@
     <section class="hero-panel">
       <div class="hero-panel__row">
         <div>
-          <span class="panel__kicker">Importação local</span>
-          <h2>Planilha do SGP</h2>
-          <p>Formatos aceitos: XLSX e CSV. O arquivo não é publicado no GitHub nem gravado na Vercel; ele é enviado ao motor local da Central OS e armazenado apenas no computador operacional.</p>
+          <span class="panel__kicker">Ordens de serviço</span>
+          <h2>Selecione a planilha</h2>
+          <p>Após a importação, a Central OS usará as linhas válidas do arquivo para consultar mensagens e evidências nos grupos configurados.</p>
         </div>
-        <span id="engineBadge" class="panel__badge warning">Verificando motor</span>
+        <span id="engineBadge" class="panel__badge warning">Verificando disponibilidade</span>
       </div>
     </section>
 
     <section class="dashboard-grid">
       <article class="panel">
         <div class="panel__header">
-          <div><span class="panel__kicker">Arquivo</span><h2>Selecionar planilha</h2></div>
-          <span class="panel__badge">Passo obrigatório</span>
+          <div><span class="panel__kicker">Arquivo</span><h2>Importar</h2></div>
+          <span class="panel__badge">XLSX ou CSV</span>
         </div>
 
         <label id="dropzone" class="upload-zone" for="spreadsheetFile">
@@ -68,19 +68,19 @@
 
         <div id="selectedFile" class="selected-file" hidden></div>
         <div class="hero-actions">
-          <button id="importButton" class="primary-button" type="button" disabled>Importar e usar como referência</button>
+          <button id="importButton" class="primary-button" type="button" disabled>Importar planilha</button>
         </div>
         <div id="importStatus" class="inline-status">Aguardando arquivo.</div>
       </article>
 
       <aside class="panel">
         <div class="panel__header">
-          <div><span class="panel__kicker">Importação atual</span><h2>Status</h2></div>
+          <div><span class="panel__kicker">Planilha atual</span><h2>Referência ativa</h2></div>
           <span id="currentBadge" class="panel__badge info">Consultando</span>
         </div>
         <div class="status-list">
           <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Arquivo</strong><small id="currentFile">—</small></div></div></div>
-          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>OS de referência</strong><small>Linhas válidas importadas</small></div></div><span id="currentCount" class="status-value">—</span></div>
+          <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Ordens de serviço</strong><small>Linhas válidas importadas</small></div></div><span id="currentCount" class="status-value">—</span></div>
           <div class="status-row"><div class="status-row__left"><span class="status-dot"></span><div><strong>Importada em</strong><small id="currentDate">—</small></div></div></div>
         </div>
       </aside>
@@ -88,7 +88,7 @@
 
     <section id="importResult" class="panel import-result" hidden>
       <div class="panel__header">
-        <div><span class="panel__kicker">Planilha carregada</span><h2>Referências reconhecidas</h2></div>
+        <div><span class="panel__kicker">Planilha carregada</span><h2>Ordens reconhecidas</h2></div>
         <span id="resultBadge" class="panel__badge">0 OS</span>
       </div>
       <div id="mapping" class="mapping-grid"></div>
@@ -99,12 +99,12 @@
         </table>
       </div>
       <div class="hero-actions">
-        <a class="primary-button" href="/possivelmente-fechadas">Analisar possivelmente fechadas</a>
-        <a class="secondary-button" href="/relatorio">Abrir relatório</a>
+        <a class="primary-button" href="/relatorio">Ver relatório</a>
+        <a class="secondary-button" href="/possivelmente-fechadas">Possivelmente Fechadas</a>
       </div>
     </section>
 
-    <div class="footer">Central OS • Etapa 01 • Planilha de referência</div>
+    <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
