@@ -189,14 +189,30 @@ function loadingCards() {
   ).join("");
 }
 
-async function load() {
+async function getClosedData(days, force = false) {
+  const shared = window.CentralOS?.data;
+  const cached = !force ? shared?.peekAnalysis?.(days) : null;
+  const analysis = cached || (shared?.getAnalysis
+    ? await shared.getAnalysis(days, { force })
+    : await localApiFetch("/api/analise?days=" + days));
+
+  const closedItems = (analysis.items || [])
+    .filter(item => item.classification === "possivelmente_realizada")
+    .sort((a, b) => Number(b.date || 0) - Number(a.date || 0));
+
+  return { ...analysis, totalPossiblyClosed: closedItems.length, items: closedItems };
+}
+
+async function load(force = false) {
   const days = Number(daysEl.value);
-  statusEl.textContent = "Atualizando…";
-  statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = loadingCards();
+  const immediate = !force ? window.CentralOS?.data?.peekAnalysis?.(days) : null;
+
+  statusEl.textContent = immediate ? "Atualizado" : "Atualizando…";
+  statusEl.className = immediate ? "status-badge online-state" : "status-badge loading";
+  if (!immediate) resultsEl.innerHTML = loadingCards();
 
   try {
-    const data = await localApiFetch("/api/possivelmente-fechadas?days=" + days);
+    const data = await getClosedData(days, force);
     render(data);
   } catch (error) {
     items = [];
@@ -211,6 +227,6 @@ async function load() {
   }
 }
 
-el("refresh").addEventListener("click", load);
-daysEl.addEventListener("change", load);
+el("refresh").addEventListener("click", () => load(true));
+daysEl.addEventListener("change", () => load(false));
 load();
