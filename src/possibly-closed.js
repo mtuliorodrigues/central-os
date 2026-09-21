@@ -47,7 +47,34 @@ function quotedText(ctx) {
 }
 
 function normalize(s) {
-  return String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function digits(value) {
+  return String(value || "").replace(/\D+/g, "");
+}
+
+function numberTokens(text) {
+  return new Set((String(text || "").match(/\d{2,}/g) || []).map(digits));
+}
+
+function wordSet(text) {
+  return new Set(normalize(text).split(" ").filter(w => w.length >= 3));
+}
+
+function overlapRatio(a, b) {
+  const left = wordSet(a);
+  const right = wordSet(b);
+  if (!left.size || !right.size) return 0;
+  let hit = 0;
+  for (const word of left) if (right.has(word)) hit++;
+  return hit / left.size;
 }
 
 function isStructuredOS(text) {
@@ -143,92 +170,252 @@ function evidenceOf(m, root, reason, signal = null) {
   };
 }
 
-export function findPossiblyClosed(messages, { days = 30, maxAdjacent = 8, maxAdjacentMinutes = 20 } = {}) {
+function safeReference(ref) {
+  return {
+    rowNumber: ref?.rowNumber || null,
+    client: ref?.client || "",
+    osNumber: ref?.osNumber || "",
+    contractId: ref?.contractId || "",
+    login: ref?.login || "",
+    service: ref?.service || "",
+    description: ref?.description || "",
+    date: ref?.date || ""
+  };
+}
+
+function scoreReferenceAgainstRoot(ref, root) {
+  const text = textOf(root);
+  const normalizedText = normalize(text);
+  const numbers = numberTokens(text);
+  const matchedFields = [];
+  let score = 0;
+  let strong = 0;
+
+  const osNumber = digits(ref?.osNumber);
+  if (osNumber && numbers.has(osNumber)) {
+    score += 7; strong++; matchedFields.push("os");
+  }
+
+  const contractId = digits(ref?.contractId);
+  if (contractId && numbers.has(contractId)) {
+    score += 6; strong++; matchedFields.push("id");
+  }
+
+  const login = normalize(ref?.login);
+  if (login && login.length >= 3 && normalizedText.includes(login)) {
+    score += 6; strong++; matchedFields.push("login");
+  }
+
+  const client = normalize(ref?.client);
+  if (client && client.length >= 4) {
+    if (normalizedText.includes(client)) {
+      score += 4;
+      matchedFields.push("cliente");
+    } else {
+      const ratio = overlapRatio(client, normalizedText);
+      if (ratio >= 0.75) {
+        score += 3;
+        matchedFields.push("cliente");
+      }
+    }
+  }
+
+  const description = normalize(ref?.description);
+  if (description.length >= 18) {
+    const sample = description.slice(0, 90).trim();
+    if (sample.length >= 18 && normalizedText.includes(sample)) {
+      score += 5; strong++; matchedFields.push("descricao");
+    } else {
+      const ratio = overlapRatio(description, normalizedText);
+      if (ratio >= 0.58) {
+        score += 4; strong++; matchedFields.push("descricao");
+      }
+    }
+  }
+
+  const service = normalize(ref?.service);
+  if (service.length >= 4 && normalizedText.includes(service)) {
+    score += 1;
+    matchedFields.push("servico");
+  }
+
+  const qualifies = (strong > 0 && score >= 5) || score >= 7;
+  return { score, strong, matchedFields, qualifies };
+}
+
+function findBestRoot(reference, roots) {
+  let best = null;
+  for (const root of roots) {
+    const match = scoreReferenceAgainstRoot(reference, root);
+    if (!match.qualifies) continue;
+    if (!best || match.score > best.score || (match.score === best.score && tsOf(root) > tsOf(best.root))) {
+      best = { root, ...match };
+    }
+  }
+  return best;
+}
+
+function analyzeMatchedRoot(ordered, root, { maxAdjacent = 8, maxAdjacentMinutes = 20 } = {}) {
+  const rootId = idOf(root);
+  const rootTs = tsOf(root);
+  const rootIndex = ordered.indexOf(root);
+  const nextRootIndex = ordered.findIndex((m, idx) => idx > rootIndex && isStructuredOS(textOf(m)));
+  const hardEnd = nextRootIndex >= 0 ? nextRootIndex : ordered.length;
+
+  const direct = ordered.filter(m => {
+    if (m === root) return false;
+    const c = ctxOf(m);
+    return (c?.stanzaId && c.stanzaId === rootId) ||
+      (quotedText(c) && normalize(quotedText(c)) === normalize(textOf(root)));
+  });
+
+  const adjacent = [];
+  for (let i = rootIndex + 1; i < Math.min(hardEnd, rootIndex + 1 + maxAdjacent); i++) {
+    const m = ordered[i];
+    if (isStructuredOS(textOf(m))) break;
+    if (tsOf(m) - rootTs > maxAdjacentMinutes * 60) break;
+    adjacent.push(m);
+  }
+
+  const uniq = new Map();
+  for (const m of [...direct, ...adjacent]) {
+    const k = idOf(m) || `${tsOf(m)}:${senderOf(m)}:${textOf(m)}`;
+    uniq.set(k, m);
+  }
+
+  let doneScore = 0;
+  let pendingScore = 0;
+  const evidence = [];
+
+  for (const m of uniq.values()) {
+    const text = textOf(m);
+    if (!text || isStructuredOS(text)) continue;
+
+    const doneSignal = matchAny(text, DONE);
+    const pendingSignal = matchAny(text, PENDING);
+    const relation = relationTo(root, m);
+    const weight = relation === "resposta" ? 4 : 2;
+
+    if (doneSignal) {
+      doneScore += weight;
+      evidence.push(evidenceOf(
+        m, root,
+        relation === "resposta"
+          ? "Resposta diretamente vinculada à OS indica conclusão."
+          : "Mensagem logo após a OS contém indício de conclusão.",
+        doneSignal
+      ));
+    }
+    if (pendingSignal) {
+      pendingScore += weight;
+      evidence.push(evidenceOf(
+        m, root,
+        "Mensagem relacionada contém indício de pendência.",
+        pendingSignal
+      ));
+    }
+  }
+
+  let classification = "sem_evidencia";
+  let confidence = "baixa";
+  if (doneScore > pendingScore && doneScore >= 2) {
+    classification = "possivelmente_realizada";
+    confidence = doneScore >= 4 && pendingScore === 0 ? "alta" : "media";
+  } else if (pendingScore > doneScore && pendingScore >= 2) {
+    classification = "possivelmente_pendente";
+    confidence = pendingScore >= 4 && doneScore === 0 ? "alta" : "media";
+  } else if (doneScore && pendingScore) {
+    classification = "revisao_manual";
+    confidence = "media";
+  }
+
+  return {
+    classification,
+    confidence,
+    scores: { done: doneScore, pending: pendingScore },
+    evidence: evidence.sort((a,b) => a.timestamp - b.timestamp)
+  };
+}
+
+export function analyzeSpreadsheetReferences(messages, references, {
+  days = 30,
+  maxAdjacent = 8,
+  maxAdjacentMinutes = 20
+} = {}) {
   const ordered = [...messages].sort((a,b) => tsOf(a) - tsOf(b));
   const roots = ordered.filter(m => isStructuredOS(textOf(m)));
-  const results = [];
+  const items = [];
 
-  for (const root of roots) {
-    const rootId = idOf(root);
-    const rootTs = tsOf(root);
-    const rootIndex = ordered.indexOf(root);
-    const nextRootIndex = ordered.findIndex((m, idx) => idx > rootIndex && isStructuredOS(textOf(m)));
-    const hardEnd = nextRootIndex >= 0 ? nextRootIndex : ordered.length;
+  for (const reference of references || []) {
+    const best = findBestRoot(reference, roots);
 
-    const direct = ordered.filter(m => {
-      if (m === root) return false;
-      const c = ctxOf(m);
-      return (c?.stanzaId && c.stanzaId === rootId) ||
-        (quotedText(c) && normalize(quotedText(c)) === normalize(textOf(root)));
-    });
-
-    const adjacent = [];
-    for (let i = rootIndex + 1; i < Math.min(hardEnd, rootIndex + 1 + maxAdjacent); i++) {
-      const m = ordered[i];
-      if (isStructuredOS(textOf(m))) break;
-      if (tsOf(m) - rootTs > maxAdjacentMinutes * 60) break;
-      adjacent.push(m);
+    if (!best) {
+      items.push({
+        reference: safeReference(reference),
+        classification: "nao_localizada",
+        confidence: "baixa",
+        match: null,
+        evidence: []
+      });
+      continue;
     }
 
-    const uniq = new Map();
-    for (const m of [...direct, ...adjacent]) {
-      const k = idOf(m) || `${tsOf(m)}:${senderOf(m)}:${textOf(m)}`;
-      uniq.set(k, m);
-    }
-
-    let doneScore = 0;
-    let pendingScore = 0;
-    const evidence = [];
-
-    for (const m of uniq.values()) {
-      const text = textOf(m);
-      if (!text || isStructuredOS(text)) continue;
-
-      const doneSignal = matchAny(text, DONE);
-      const pendingSignal = matchAny(text, PENDING);
-      const relation = relationTo(root, m);
-      const weight = relation === "resposta" ? 4 : 2;
-
-      if (doneSignal) {
-        doneScore += weight;
-        evidence.push(evidenceOf(
-          m, root,
-          relation === "resposta"
-            ? "Resposta diretamente vinculada à OS indica conclusão."
-            : "Mensagem logo após a OS contém indício de conclusão.",
-          doneSignal
-        ));
-      }
-      if (pendingSignal) {
-        pendingScore += weight;
-        evidence.push(evidenceOf(
-          m, root,
-          "Mensagem relacionada contém indício de pendência.",
-          pendingSignal
-        ));
-      }
-    }
-
-    if (doneScore < 2 || doneScore <= pendingScore) continue;
-
+    const root = best.root;
+    const context = analyzeMatchedRoot(ordered, root, { maxAdjacent, maxAdjacentMinutes });
     const details = extractDetails(root);
-    results.push({
-      osMessageId: rootId,
-      date: rootTs,
-      confidence: doneScore >= 4 && pendingScore === 0 ? "alta" : "media",
-      scores: { done: doneScore, pending: pendingScore },
+
+    items.push({
+      reference: safeReference(reference),
+      osMessageId: idOf(root),
+      date: tsOf(root),
       ...details,
       originalText: textOf(root),
-      evidence: evidence.sort((a,b) => a.timestamp - b.timestamp)
+      match: {
+        score: best.score,
+        matchedFields: best.matchedFields
+      },
+      ...context
     });
   }
+
+  const summary = items.reduce((acc, item) => {
+    acc[item.classification] = (acc[item.classification] || 0) + 1;
+    return acc;
+  }, {});
+
+  const matched = items.filter(item => item.classification !== "nao_localizada").length;
 
   return {
     days,
     generatedAt: new Date().toISOString(),
     totalMessages: messages.length,
     totalStructuredOS: roots.length,
-    totalPossiblyClosed: results.length,
-    items: results.sort((a,b) => b.date - a.date)
+    totalSpreadsheetOS: references?.length || 0,
+    totalMatched: matched,
+    totalUnmatched: (references?.length || 0) - matched,
+    summary,
+    items
+  };
+}
+
+export function findPossiblyClosed(messages, {
+  days = 30,
+  references = [],
+  maxAdjacent = 8,
+  maxAdjacentMinutes = 20
+} = {}) {
+  const analysis = analyzeSpreadsheetReferences(messages, references, {
+    days,
+    maxAdjacent,
+    maxAdjacentMinutes
+  });
+  const items = analysis.items
+    .filter(item => item.classification === "possivelmente_realizada")
+    .sort((a,b) => (b.date || 0) - (a.date || 0));
+
+  return {
+    ...analysis,
+    totalPossiblyClosed: items.length,
+    items
   };
 }
