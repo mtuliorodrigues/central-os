@@ -7,7 +7,7 @@
   <title>Dashboard • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body data-page="dashboard" >
+<body data-page="dashboard">
 <div class="app-shell">
   <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
@@ -21,23 +21,62 @@
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
       </div>
     </section>
-    <section class="stats-grid dashboard-summary">
-    <a class="stat-card info stat-link" href="/historico"><span class="stat-card__label">Relatórios gerados</span><b id="reportsCount" class="stat-card__value">—</b><span class="stat-card__meta">Análises disponíveis no histórico</span></a>
-    <a class="stat-card info stat-link" href="/os-analisadas"><span class="stat-card__label">Total da última análise</span><b id="analyzedCount" class="stat-card__value">—</b><span class="stat-card__meta">Ordens processadas no relatório atual</span></a>
-    <a class="stat-card success stat-link" href="/localizadas"><span class="stat-card__label">Localizadas</span><b id="locatedCount" class="stat-card__value">—</b><span class="stat-card__meta">Encontradas nos grupos consultados</span></a>
-    <a class="stat-card danger stat-link" href="/nao-localizadas"><span class="stat-card__label">Não localizadas</span><b id="missingCount" class="stat-card__value">—</b><span class="stat-card__meta">Sem correspondência encontrada</span></a>
-    <a class="stat-card success stat-link" href="/possivelmente-fechadas"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Com indícios de conclusão</span></a>
-    <a class="stat-card warning stat-link" href="/pendentes"><span class="stat-card__label">Pendentes</span><b id="pendingCount" class="stat-card__value">—</b><span class="stat-card__meta">Ainda sem evidência suficiente de fechamento</span></a>
-  </section>
-  <section class="dashboard-bottom">
-    <div>
-      <span class="panel__kicker">Referência atual</span>
-      <strong id="dashboardFile">Nenhuma planilha carregada</strong>
-      <span id="dashboardUpdated">Importe uma planilha para iniciar.</span>
-    </div>
-    <button class="primary-button" type="button" data-import-planilha>Importar planilha</button>
-  </section>
-  <script type="module" src="/dashboard.js"></script>
+
+    <section class="dashboard-layout">
+      <div class="dashboard-primary">
+        <div class="stats-grid dashboard-summary">
+          <a class="stat-card info stat-link" href="/historico">
+            <span class="stat-card__label">Relatórios gerados</span>
+            <b id="reportsCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Análises disponíveis no histórico</span>
+          </a>
+          <a class="stat-card info stat-link" href="/os-analisadas">
+            <span class="stat-card__label">Total da última análise</span>
+            <b id="analyzedCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Ordens processadas no relatório atual</span>
+          </a>
+          <a class="stat-card success stat-link" href="/localizadas">
+            <span class="stat-card__label">Localizadas</span>
+            <b id="locatedCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Encontradas nos grupos consultados</span>
+          </a>
+          <a class="stat-card danger stat-link" href="/nao-localizadas">
+            <span class="stat-card__label">Não localizadas</span>
+            <b id="missingCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Sem correspondência encontrada</span>
+          </a>
+          <a class="stat-card success stat-link" href="/possivelmente-fechadas">
+            <span class="stat-card__label">Possivelmente fechadas</span>
+            <b id="closedCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Com indícios de conclusão</span>
+          </a>
+          <a class="stat-card warning stat-link" href="/pendentes">
+            <span class="stat-card__label">Pendentes</span>
+            <b id="pendingCount" class="stat-card__value">—</b>
+            <span class="stat-card__meta">Ainda sem evidência suficiente de fechamento</span>
+          </a>
+        </div>
+
+        <div class="dashboard-bottom">
+          <div>
+            <span class="panel__kicker">Referência atual</span>
+            <strong id="dashboardFile">Nenhuma planilha carregada</strong>
+            <span id="dashboardUpdated">Importe uma planilha para iniciar.</span>
+          </div>
+          <button class="primary-button" type="button" data-import-planilha>Importar planilha</button>
+        </div>
+      </div>
+
+      <aside class="panel dashboard-future" aria-label="Área reservada">
+        <div class="dashboard-future__content">
+          <span class="panel__kicker">Próximos recursos</span>
+          <h2>Em construção</h2>
+          <p>Novas informações em breve.</p>
+        </div>
+      </aside>
+    </section>
+
+    <script type="module" src="/dashboard.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
