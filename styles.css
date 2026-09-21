@@ -3488,3 +3488,32 @@ body[data-page="dashboard"] .page-surface--dashboard .dashboard-summary .stat-ca
   background-size:200% 100%;
   animation:titleUnderlineFlow 6s linear infinite;
 }
+
+
+/* Ajustes finais: sobe o conjunto do Dashboard e troca vermelho por azul escuro */
+body[data-page="dashboard"] .main > .topbar{
+  margin-bottom:4px;
+}
+
+.page-title{
+  background-image:repeating-linear-gradient(
+    90deg,
+    #14d69a 0%,
+    #123f73 16.666%,
+    #14d69a 33.333%,
+    #14d69a 50%
+  )!important;
+  background-size:200% 100%;
+  animation:titleGradient 8s linear infinite;
+}
+.page-title::after{
+  background:repeating-linear-gradient(
+    90deg,
+    #14d69a 0%,
+    #123f73 16.666%,
+    #14d69a 33.333%,
+    #14d69a 50%
+  );
+  background-size:200% 100%;
+  animation:titleUnderlineFlow 6s linear infinite;
+}
