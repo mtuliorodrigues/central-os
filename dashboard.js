@@ -1,7 +1,7 @@
 import { localApiFetch } from "/local-api.js";
 
 const ids = {
-  imported: "importedCount",
+  reportsGenerated: "reportsCount",
   analyzed: "analyzedCount",
   located: "locatedCount",
   notLocated: "missingCount",
