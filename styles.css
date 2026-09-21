@@ -3131,3 +3131,73 @@ body{overflow:hidden;font-size:17.5px}
     #f4fff9 58%
   )!important;
 }
+
+
+/* Ajustes pequenos finais: menu recolhido e respiro vertical do Dashboard */
+@media(min-width:821px){
+  .sidebar{
+    width:100px;
+    padding-left:14px;
+    padding-right:14px;
+  }
+  .main{
+    margin-left:100px;
+  }
+  body.sidebar-expanded .sidebar{
+    width:280px;
+  }
+  body.sidebar-expanded .main{
+    margin-left:280px;
+  }
+
+  .sidebar .nav-link{
+    min-width:60px;
+    height:58px;
+  }
+  .sidebar .nav-link__icon{
+    width:46px;
+    height:46px;
+    flex:0 0 46px;
+    font-size:22px;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    display:grid!important;
+  }
+  body:not(.sidebar-expanded) .nav-link{
+    width:100%;
+    justify-content:center;
+    overflow:visible;
+  }
+  body:not(.sidebar-expanded) .nav-link__icon{
+    margin:0 auto!important;
+  }
+  body:not(.sidebar-expanded) .navigation > .nav-label:first-child{
+    width:100%;
+    text-align:center;
+    white-space:nowrap;
+  }
+}
+
+/* Somente o Dashboard ganha um pouco mais de altura útil, sem alterar títulos ou largura */
+@media(min-width:821px){
+  body[data-page="dashboard"] .main{
+    position:relative;
+    padding-bottom:6px;
+  }
+  body[data-page="dashboard"] .main > .footer{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:2px;
+    height:0;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    opacity:0;
+    pointer-events:none;
+  }
+  body[data-page="dashboard"] .main > .page-surface--dashboard{
+    margin-bottom:0;
+  }
+}
