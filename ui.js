@@ -32,7 +32,7 @@ function renderSidebar() {
       <span class="brand__copy"><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span>
     </a>
     <nav class="navigation">
-      <div class="nav-label">Operação</div>
+      <div class="nav-label">Menu</div>
       ${navItems.map(navLink).join("")}
       <div class="nav-label nav-label--secondary">Sistema</div>
       ${systemItems.map(navLink).join("")}
