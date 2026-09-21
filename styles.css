@@ -411,3 +411,18 @@ button,input,select{font:inherit}
   70%{box-shadow:0 0 0 11px rgba(20,214,154,0)}
   100%{box-shadow:0 0 0 0 rgba(20,214,154,0)}
 }
+.flow-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;
+  margin-top:18px;
+}
+.flow-step--source{
+  grid-column:1/-1;
+  border-color:rgba(20,214,154,.28);
+  background:linear-gradient(180deg,rgba(8,59,53,.52),#0a1825);
+}
+@media(max-width:600px){
+  .flow-grid{grid-template-columns:1fr}
+  .flow-step--source{grid-column:auto}
+}
