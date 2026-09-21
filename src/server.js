@@ -309,6 +309,7 @@ const staticFiles = new Map([
   ["/styles.css", ["styles.css", "text/css; charset=utf-8"]],
   ["/ui.js", ["ui.js", "text/javascript; charset=utf-8"]],
   ["/local-api.js", ["local-api.js", "text/javascript; charset=utf-8"]],
+  ["/global-import.js", ["global-import.js", "text/javascript; charset=utf-8"]],
   ["/dashboard.js", ["dashboard.js", "text/javascript; charset=utf-8"]],
   ["/analysis-list.js", ["analysis-list.js", "text/javascript; charset=utf-8"]],
   ["/historico.js", ["historico.js", "text/javascript; charset=utf-8"]],
