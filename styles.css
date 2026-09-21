@@ -3549,3 +3549,49 @@ body[data-page="dashboard"] .main > .topbar{
 .brand__logo{
   mix-blend-mode:normal!important;
 }
+
+
+/* Possivelmente Fechadas: lista resumida + modal detalhado */
+.closed-summary-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  min-height:96px;
+  padding:16px 18px;
+}
+.closed-summary-card__content{
+  min-width:0;
+  flex:1 1 auto;
+}
+.closed-summary-card h3{
+  margin:5px 0 7px;
+}
+.closed-summary-card .meta-line{
+  margin-top:0;
+}
+.closed-detail-button{
+  flex:0 0 auto;
+  min-width:108px;
+}
+.closed-modal-summary{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.closed-modal-detail .detail-grid{
+  margin-top:0;
+}
+
+@media(max-width:720px){
+  .closed-summary-card{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:13px;
+  }
+  .closed-detail-button{
+    width:100%;
+  }
+}
