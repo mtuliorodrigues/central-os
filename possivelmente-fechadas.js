@@ -4,6 +4,9 @@ const el = id => document.getElementById(id);
 const daysEl = el("days");
 const resultsEl = el("results");
 const statusEl = el("agentStatus");
+const PAGE_SIZE = 6;
+let items = [];
+let currentPage = 1;
 
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
@@ -43,7 +46,7 @@ function evidenceHtml(ev) {
   ].join("");
 }
 
-function itemHtml(item, index) {
+function itemHtml(item, absoluteIndex) {
   const ref = item.reference || {};
   const idLabel = item.osNumber
     ? "OS " + escapeHtml(item.osNumber)
@@ -54,7 +57,7 @@ function itemHtml(item, index) {
   return [
     '<article class="os-card">',
       '<div class="os-card__head"><div>',
-        '<span class="candidate-number">ORDEM ' + String(index + 1).padStart(2, "0") + '</span>',
+        '<span class="candidate-number">ORDEM ' + String(absoluteIndex + 1).padStart(2, "0") + '</span>',
         '<h3>' + escapeHtml(item.client || ref.client || "Cliente não identificado") + '</h3>',
         '<div class="meta-line">',
           '<span>' + idLabel + '</span>',
@@ -91,23 +94,72 @@ function itemHtml(item, index) {
   ].join("");
 }
 
+function ensurePagination() {
+  let pagination = document.getElementById("closedPagination");
+  if (pagination) return pagination;
+  pagination = document.createElement("div");
+  pagination.id = "closedPagination";
+  pagination.className = "pagination";
+  resultsEl.insertAdjacentElement("afterend", pagination);
+  pagination.addEventListener("click", event => {
+    const button = event.target.closest("button[data-page]");
+    if (!button || button.disabled) return;
+    currentPage = Number(button.dataset.page || 1);
+    renderPage();
+    document.querySelector(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  return pagination;
+}
+
+function renderPagination() {
+  const pagination = ensurePagination();
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+  if (totalPages <= 1) {
+    pagination.hidden = true;
+    pagination.innerHTML = "";
+    return;
+  }
+
+  pagination.hidden = false;
+  const parts = [`<button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>Anterior</button>`];
+  const visible = new Set([1, totalPages, currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2].filter(p => p >= 1 && p <= totalPages));
+  let prev = 0;
+  [...visible].sort((a,b) => a-b).forEach(page => {
+    if (prev && page - prev > 1) parts.push('<span class="pagination__ellipsis">…</span>');
+    parts.push(`<button type="button" data-page="${page}" class="${page === currentPage ? "active" : ""}">${page}</button>`);
+    prev = page;
+  });
+  parts.push(`<button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Próxima</button>`);
+  pagination.innerHTML = parts.join("");
+}
+
+function renderPage() {
+  if (!items.length) {
+    resultsEl.innerHTML = '<div class="empty-state">Nenhuma OS da planilha apresentou evidência suficiente de conclusão neste período.</div>';
+    ensurePagination().hidden = true;
+    return;
+  }
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  resultsEl.innerHTML = items.slice(start, start + PAGE_SIZE).map((item, index) => itemHtml(item, start + index)).join("");
+  renderPagination();
+}
+
 function render(data) {
   el("periodValue").textContent = data.days + " dias";
   el("spreadsheetCount").textContent = Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR");
   el("matchedCount").textContent = Number(data.totalMatched || 0).toLocaleString("pt-BR");
   el("matchedMeta").textContent = "Referências encontradas no período";
   el("closedCount").textContent = Number(data.totalPossiblyClosed || 0).toLocaleString("pt-BR");
-  el("closedHeroText").textContent = (data.import?.fileName || "Planilha importada") + " definiu " + Number(data.totalSpreadsheetOS || 0).toLocaleString("pt-BR") + " OS para análise. As conversas dos grupos foram usadas como fonte de contexto.";
+  el("closedHeroText").textContent = Number(data.totalPossiblyClosed || 0).toLocaleString("pt-BR") + " OS com indícios de conclusão.";
 
   statusEl.textContent = "Atualizado";
   statusEl.className = "status-badge online-state";
-
-  if (!data.items?.length) {
-    resultsEl.innerHTML = '<div class="empty-state">Nenhuma OS da planilha apresentou evidência suficiente de conclusão neste período.</div>';
-    return;
-  }
-
-  resultsEl.innerHTML = data.items.map(itemHtml).join("");
+  items = data.items || [];
+  currentPage = 1;
+  renderPage();
 }
 
 function showSpreadsheetRequired() {
@@ -116,7 +168,8 @@ function showSpreadsheetRequired() {
   el("closedCount").textContent = "0";
   statusEl.textContent = "Planilha necessária";
   statusEl.className = "status-badge loading";
-  resultsEl.innerHTML = '<div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><a class="primary-button" href="/importar-planilha">Importar Planilha</a></div>';
+  resultsEl.innerHTML = '<div class="empty-state"><b>Importe uma planilha para continuar.</b><p>Ela define quais ordens de serviço serão analisadas.</p><button class="primary-button" data-import-planilha type="button">Importar Planilha</button></div>';
+  ensurePagination().hidden = true;
 }
 
 async function load() {
@@ -129,6 +182,7 @@ async function load() {
     const data = await localApiFetch("/api/possivelmente-fechadas?days=" + days);
     render(data);
   } catch (error) {
+    items = [];
     if (error?.code === "spreadsheet_required") {
       showSpreadsheetRequired();
       return;
@@ -136,6 +190,7 @@ async function load() {
     statusEl.textContent = "Indisponível";
     statusEl.className = "status-badge offline";
     resultsEl.innerHTML = '<div class="empty-state error-state"><b>Não foi possível atualizar a análise agora.</b><p>Tente novamente em instantes.</p></div>';
+    ensurePagination().hidden = true;
   }
 }
 
