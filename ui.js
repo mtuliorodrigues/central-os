@@ -185,6 +185,11 @@ document.addEventListener("click", event => {
 
 window.addEventListener("popstate", () => softNavigate(location.href, { push: false }));
 
+window.CentralOS = {
+  navigate: target => softNavigate(target),
+  refresh: () => softNavigate(location.href, { push: false })
+};
+
 updateAgentStatus();
 window.setInterval(updateAgentStatus, 60_000);
 import("/global-import.js").catch(() => {});
