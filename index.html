@@ -26,6 +26,15 @@
     <div class="page-surface page-surface--dashboard">
     <section class="dashboard-layout">
       <div class="panel dashboard-primary">
+        <div class="dashboard-bottom">
+                  <div>
+                    <span class="panel__kicker">Referência atual</span>
+                    <strong id="dashboardFile">Nenhuma planilha carregada</strong>
+                    <span id="dashboardUpdated">Importe uma planilha para iniciar.</span>
+                  </div>
+                  <button class="primary-button" type="button" data-import-planilha>Importar planilha</button>
+                </div>
+
         <div class="stats-grid dashboard-summary">
           <a class="stat-card info stat-link" href="/historico">
             <span class="stat-card__label">Relatórios gerados</span>
@@ -59,14 +68,7 @@
           </a>
         </div>
 
-        <div class="dashboard-bottom">
-          <div>
-            <span class="panel__kicker">Referência atual</span>
-            <strong id="dashboardFile">Nenhuma planilha carregada</strong>
-            <span id="dashboardUpdated">Importe uma planilha para iniciar.</span>
-          </div>
-          <button class="primary-button" type="button" data-import-planilha>Importar planilha</button>
-        </div>
+        
       </div>
 
       <aside class="panel dashboard-future" aria-label="Área reservada">
