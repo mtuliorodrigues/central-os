@@ -25,11 +25,32 @@
     <div class="panel__header"><div><span class="panel__kicker">Registros</span><h2>Análises e importações</h2></div><span id="historyCount" class="panel__badge info">Carregando</span></div>
     <div class="table-wrap analysis-table-wrap">
       <table class="data-table history-table">
-        <thead><tr><th>Importada em</th><th>Planilha</th><th>OS</th><th>Localizadas</th><th>Não localizadas</th><th>Fechadas</th><th>Pendentes</th><th>Período</th><th>Grupos</th><th>Analisada em</th></tr></thead>
-        <tbody id="historyBody"><tr><td colspan="10"><div class="empty-state">Carregando histórico…</div></td></tr></tbody>
+        <thead><tr><th>Importada em</th><th>Planilha</th><th>OS</th><th>Localizadas</th><th>Não localizadas</th><th>Fechadas</th><th>Pendentes</th><th>Período</th><th>Grupos</th><th>Analisada em</th><th></th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="11"><div class="empty-state">Carregando histórico…</div></td></tr></tbody>
       </table>
     </div>
   </section>
+
+  <div id="historyDetailModal" class="history-modal" hidden>
+    <div class="history-modal__backdrop" data-history-close></div>
+    <section class="history-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+      <header class="history-modal__header">
+        <div>
+          <span class="panel__kicker">Análise anterior</span>
+          <h2 id="historyModalTitle">Detalhes da execução</h2>
+          <p id="historyModalSubtitle">Carregando informações…</p>
+        </div>
+        <button class="history-modal__close" type="button" data-history-close aria-label="Fechar">×</button>
+      </header>
+      <div id="historyModalBody" class="history-modal__body">
+        <div class="history-modal__loading">
+          <span class="processing-spinner"><span></span></span>
+          <strong>Carregando análise…</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <script type="module" src="/historico.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
