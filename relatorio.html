@@ -4,89 +4,47 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#03080f">
-  <title>Relatório • Central OS</title>
+  <title>OS Analisadas • Central OS</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
+<body data-page="analisadas" data-view="analisadas">
 <div class="app-shell">
-  <aside class="sidebar" aria-label="Navegação principal">
-    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-    <nav class="navigation">
-      <div class="nav-label">Menu</div>
-      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-      <a class="nav-link active" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-      <a class="nav-link" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
-    </nav>
-    <div class="sidebar-card">
-      <div class="sidebar-card__label">Referência atual</div>
-      <div class="sidebar-card__status"><span class="pulse-dot"></span><span id="sidebarSpreadsheet">Verificando planilha…</span></div>
-      <div class="sidebar-card__message">O relatório considera somente as ordens presentes na planilha importada.</div>
-    </div>
-    <div class="sidebar-meta">Central OS • Play Soluções</div>
-  </aside>
-
+  <aside class="sidebar" data-autonav aria-label="Navegação principal"></aside>
   <main class="main">
     <section class="topbar">
       <div>
-        <span class="section-kicker">Acompanhamento</span>
-        <h1 class="page-title">Relatório</h1>
-        <p class="page-subtitle">Veja o resultado da análise das ordens de serviço definidas pela planilha.</p>
+        <span class="section-kicker">Análise completa</span>
+        <h1 class="page-title">OS Analisadas</h1>
+        <p class="page-subtitle">Todas as ordens de serviço da planilha processadas na análise atual.</p>
       </div>
       <div class="topbar__actions">
         <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
-        <div class="filterbar"><label for="reportDays">Período<select id="reportDays"><option value="20">20 dias</option><option value="30" selected>30 dias</option></select></label></div>
-        <button id="reportRefresh" class="primary-button" type="button">Atualizar análise</button>
       </div>
     </section>
-
-    <section class="hero-panel">
-      <div class="hero-panel__row">
-        <div>
-          <span class="panel__kicker">Resumo</span>
-          <h2 id="reportTitle">Ordens da planilha em acompanhamento</h2>
-          <p id="reportSubtitle">Carregando a referência atual.</p>
-        </div>
-        <span id="reportBadge" class="panel__badge warning">Carregando</span>
+    <section class="panel detail-panel">
+    <div class="list-toolbar">
+      <div>
+        <span class="panel__kicker">Resultado atual</span>
+        <strong id="analysisSubtitle">Carregando análise…</strong>
       </div>
-    </section>
-
-    <section class="stats-grid">
-      <article class="stat-card success"><span class="stat-card__label">OS na planilha</span><b id="statSpreadsheet" class="stat-card__value">—</b><span class="stat-card__meta">Referência principal</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Localizadas nos grupos</span><b id="statMatched" class="stat-card__value">—</b><span class="stat-card__meta">Mensagens relacionadas encontradas</span></article>
-      <article class="stat-card success"><span class="stat-card__label">Possivelmente realizadas</span><b id="statDone" class="stat-card__value">—</b><span class="stat-card__meta">Indícios de conclusão</span></article>
-      <article class="stat-card warning"><span class="stat-card__label">Possivelmente pendentes</span><b id="statPending" class="stat-card__value">—</b><span class="stat-card__meta">Indícios de pendência</span></article>
-      <article class="stat-card info"><span class="stat-card__label">Revisão manual</span><b id="statReview" class="stat-card__value">—</b><span class="stat-card__meta">Necessitam conferência</span></article>
-      <article class="stat-card danger"><span class="stat-card__label">Não localizadas</span><b id="statMissing" class="stat-card__value">—</b><span class="stat-card__meta">Sem referência encontrada no período</span></article>
-    </section>
-
-    <section class="content-columns">
-      <article class="panel">
-        <div class="panel__header">
-          <div><span class="panel__kicker">Classificações</span><h2>Resumo da análise</h2></div>
-          <span id="analysisStatus" class="panel__badge info">Carregando</span>
-        </div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead><tr><th>Classificação</th><th>Quantidade</th><th>Descrição</th></tr></thead>
-            <tbody id="reportTableBody"><tr><td colspan="3">Aguardando análise.</td></tr></tbody>
-          </table>
-        </div>
-      </article>
-
-      <aside class="panel">
-        <div class="panel__header"><div><span class="panel__kicker">Referência</span><h2>Planilha atual</h2></div></div>
-        <div id="spreadsheetInfo" class="status-list"><div class="empty-state">Consultando planilha importada…</div></div>
-        <div class="hero-actions"><a class="secondary-button" href="/importar-planilha">Trocar planilha</a><a class="primary-button" href="/possivelmente-fechadas">Ver fechadas</a></div>
-      </aside>
-    </section>
-
+      <div class="list-toolbar__controls">
+        <input id="tableSearch" class="search-input" type="search" placeholder="Buscar cliente, ID, login, serviço ou grupo">
+        <label class="compact-select">Período<select id="days"><option value="20">20 dias</option><option value="30" selected>30 dias</option></select></label>
+        <button id="refresh" class="primary-button" type="button">Atualizar</button>
+      </div>
+    </div>
+    <div class="list-summary"><span id="resultCount">—</span><span id="pageStatus" class="panel__badge warning">Carregando</span></div>
+    <div class="table-wrap analysis-table-wrap">
+      <table class="data-table analysis-table">
+        <thead><tr><th>Cliente</th><th>OS / ID</th><th>Login</th><th>Serviço</th><th>Data</th><th>Status</th><th>Grupo</th><th>Evidência</th></tr></thead>
+        <tbody id="analysisBody"><tr><td colspan="8"><div class="empty-state">Carregando ordens de serviço…</div></td></tr></tbody>
+      </table>
+    </div>
+  </section>
+  <script type="module" src="/analysis-list.js"></script>
     <div class="footer">Central OS • Play Soluções</div>
   </main>
 </div>
 <script src="/ui.js"></script>
-<script type="module" src="/relatorio.js"></script>
 </body>
 </html>
