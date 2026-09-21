@@ -339,7 +339,7 @@ async function processAnalysis() {
   return full;
 }
 
-async function getCachedAnalysis(days = 30, { processIfMissing = true } = {}) {
+async function getCachedAnalysis(days = 30, { processIfMissing = false } = {}) {
   const currentImport = await requireImport();
   const cache = await readAnalysisCache();
 
@@ -359,7 +359,7 @@ async function getCachedAnalysis(days = 30, { processIfMissing = true } = {}) {
 }
 
 async function getPossiblyClosed(days) {
-  const analysis = await getCachedAnalysis(days);
+  const analysis = await getCachedAnalysis(days, { processIfMissing: false });
   const items = (analysis.items || [])
     .filter(item => item.classification === "possivelmente_realizada")
     .sort((a, b) => Number(b.date || 0) - Number(a.date || 0));
@@ -504,7 +504,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/api/analise" && req.method === "GET") {
       const requested = Number(url.searchParams.get("days") || 30);
       const days = requested === 20 ? 20 : 30;
-      return json(res, 200, await getCachedAnalysis(days));
+      return json(res, 200, await getCachedAnalysis(days, { processIfMissing: false }));
     }
 
     if (url.pathname === "/api/possivelmente-fechadas" && req.method === "GET") {
