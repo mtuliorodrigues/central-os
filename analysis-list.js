@@ -183,11 +183,26 @@ ensurePagination().addEventListener("click", event => {
   renderPage();
 });
 
+function loadingRows() {
+  return Array.from({ length: 8 }, () =>
+    '<tr class="skeleton-row">' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-50"></span></td>' +
+      '<td><span class="skeleton-block w-55"></span></td>' +
+      '<td><span class="skeleton-block w-80"></span></td>' +
+      '<td><span class="skeleton-block w-60"></span></td>' +
+      '<td><span class="skeleton-pill"></span></td>' +
+      '<td><span class="skeleton-block w-70"></span></td>' +
+      '<td><span class="skeleton-block w-90"></span></td>' +
+    '</tr>'
+  ).join("");
+}
+
 async function load() {
   const days = Number(daysEl?.value || 30);
   statusEl.textContent = "Atualizando";
   statusEl.className = "panel__badge warning";
-  bodyEl.innerHTML = '<tr><td colspan="8"><div class="empty-state">Carregando ordens de serviço…</div></td></tr>';
+  bodyEl.innerHTML = loadingRows();
 
   try {
     const data = await localApiFetch("/api/analise?days=" + days);
