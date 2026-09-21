@@ -2,6 +2,11 @@ import { localApiFetch } from "/local-api.js";
 
 const body = document.getElementById("historyBody");
 const badge = document.getElementById("historyCount");
+const tableWrap = document.querySelector(".analysis-table-wrap");
+const PAGE_SIZE = 10;
+let historyItems = [];
+let currentPage = 1;
+
 const escapeHtml = value => String(value ?? "")
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
@@ -18,28 +23,81 @@ function formatDate(value) {
 
 function n(value) { return Number(value || 0).toLocaleString("pt-BR"); }
 
+function ensurePagination() {
+  let pagination = document.getElementById("historyPagination");
+  if (pagination) return pagination;
+  pagination = document.createElement("div");
+  pagination.id = "historyPagination";
+  pagination.className = "pagination";
+  tableWrap?.insertAdjacentElement("afterend", pagination);
+  return pagination;
+}
+
+function renderPagination() {
+  const pagination = ensurePagination();
+  const totalPages = Math.max(1, Math.ceil(historyItems.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+  if (totalPages <= 1) {
+    pagination.hidden = true;
+    pagination.innerHTML = "";
+    return;
+  }
+
+  pagination.hidden = false;
+  const parts = [
+    `<button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>Anterior</button>`
+  ];
+  for (let page = 1; page <= totalPages; page++) {
+    if (totalPages > 7 && page > 2 && page < totalPages - 1 && Math.abs(page - currentPage) > 1) {
+      if (parts[parts.length - 1] !== '<span class="pagination__ellipsis">…</span>') parts.push('<span class="pagination__ellipsis">…</span>');
+      continue;
+    }
+    parts.push(`<button type="button" data-page="${page}" class="${page === currentPage ? "active" : ""}">${page}</button>`);
+  }
+  parts.push(`<button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>Próxima</button>`);
+  pagination.innerHTML = parts.join("");
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageItems = historyItems.slice(start, start + PAGE_SIZE);
+  badge.textContent = historyItems.length + " registro(s)";
+  body.innerHTML = pageItems.length ? pageItems.map(item => '<tr>' +
+    '<td><strong>' + escapeHtml(formatDate(item.importedAt)) + '</strong></td>' +
+    '<td>' + escapeHtml(item.fileName || "—") + '</td>' +
+    '<td>' + n(item.totalOS) + '</td>' +
+    '<td>' + n(item.totalMatched) + '</td>' +
+    '<td>' + n(item.totalUnmatched) + '</td>' +
+    '<td>' + n(item.possiblyClosed) + '</td>' +
+    '<td>' + n(item.pendingOrReview) + '</td>' +
+    '<td>' + escapeHtml(item.days ? item.days + " dias" : "—") + '</td>' +
+    '<td>' + escapeHtml((item.groups || []).join(", ") || "—") + '</td>' +
+    '<td>' + escapeHtml(formatDate(item.analyzedAt)) + '</td>' +
+  '</tr>').join("") :
+  '<tr><td colspan="10"><div class="empty-state">Nenhuma análise anterior registrada.</div></td></tr>';
+  renderPagination();
+}
+
+ensurePagination().addEventListener("click", event => {
+  const button = event.target.closest("button[data-page]");
+  if (!button || button.disabled) return;
+  currentPage = Number(button.dataset.page || 1);
+  renderPage();
+  tableWrap?.scrollTo({ top: 0, behavior: "smooth" });
+});
+
 async function load() {
   try {
     const data = await localApiFetch("/api/historico");
-    const history = data.history || [];
-    badge.textContent = history.length + " registro(s)";
-    body.innerHTML = history.length ? history.map(item => '<tr>' +
-      '<td><strong>' + escapeHtml(formatDate(item.importedAt)) + '</strong></td>' +
-      '<td>' + escapeHtml(item.fileName || "—") + '</td>' +
-      '<td>' + n(item.totalOS) + '</td>' +
-      '<td>' + n(item.totalMatched) + '</td>' +
-      '<td>' + n(item.totalUnmatched) + '</td>' +
-      '<td>' + n(item.possiblyClosed) + '</td>' +
-      '<td>' + n(item.pendingOrReview) + '</td>' +
-      '<td>' + escapeHtml(item.days ? item.days + " dias" : "—") + '</td>' +
-      '<td>' + escapeHtml((item.groups || []).join(", ") || "—") + '</td>' +
-      '<td>' + escapeHtml(formatDate(item.analyzedAt)) + '</td>' +
-    '</tr>').join("") :
-    '<tr><td colspan="10"><div class="empty-state">Nenhuma análise anterior registrada.</div></td></tr>';
+    historyItems = data.history || [];
+    currentPage = 1;
+    renderPage();
   } catch {
     badge.textContent = "Indisponível";
     badge.className = "panel__badge danger";
     body.innerHTML = '<tr><td colspan="10"><div class="empty-state error-state">Não foi possível carregar o histórico.</div></td></tr>';
+    ensurePagination().hidden = true;
   }
 }
 
