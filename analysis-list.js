@@ -71,6 +71,7 @@ function evidenceCell(item) {
   if (item.originalText) {
     pieces.push(
       '<div class="evidence-preview"><strong>Mensagem localizada' +
+      (item.sender ? " • " + escapeHtml(item.sender) : "") +
       (item.groupName ? " • " + escapeHtml(item.groupName) : "") +
       '</strong><p>' + escapeHtml(maskSensitive(item.originalText)) + '</p></div>'
     );
@@ -79,6 +80,7 @@ function evidenceCell(item) {
     pieces.push(
       '<div class="evidence-preview"><strong>' +
       escapeHtml(ev.relation || "Evidência") +
+      (ev.sender ? " • " + escapeHtml(ev.sender) : "") +
       (ev.groupName ? " • " + escapeHtml(ev.groupName) : "") +
       '</strong><p>' + escapeHtml(maskSensitive(ev.text || "")) + '</p></div>'
     );
@@ -95,7 +97,7 @@ function rowHtml(item) {
   const identification = item.osNumber || item.contractId || ref.osNumber || ref.contractId || "—";
   const client = item.client || ref.client || "—";
   const login = item.login || ref.login || "—";
-  const service = item.service || ref.service || "—";
+  const sender = item.sender || "—";
   const date = ref.date || item.date;
   const group = item.groupName || "—";
 
@@ -103,7 +105,7 @@ function rowHtml(item) {
     '<td><strong>' + escapeHtml(client) + '</strong></td>' +
     '<td>' + escapeHtml(identification) + '</td>' +
     '<td>' + escapeHtml(login) + '</td>' +
-    '<td>' + escapeHtml(service) + '</td>' +
+    '<td>' + escapeHtml(sender) + '</td>' +
     '<td>' + escapeHtml(formatDate(date)) + '</td>' +
     '<td><span class="status-pill ' + statusClass(item.classification) + '">' + escapeHtml(statusLabel(item.classification)) + '</span></td>' +
     '<td>' + escapeHtml(group) + '</td>' +
@@ -167,7 +169,9 @@ function applyFilter(resetPage = true) {
     const ref = item.reference || {};
     const haystack = [
       item.client, ref.client, item.osNumber, item.contractId, ref.osNumber, ref.contractId,
-      item.login, ref.login, item.service, ref.service, item.groupName, statusLabel(item.classification)
+      item.login, ref.login, item.sender, item.groupName,
+      ...(item.evidence || []).map(ev => ev.sender),
+      statusLabel(item.classification)
     ].join(" ").toLowerCase();
     return haystack.includes(query);
   }) : [...sourceItems];
