@@ -3543,3 +3543,9 @@ body[data-page="dashboard"] .main > .topbar{
     padding-top:calc(clamp(18px,1.6vw,30px) - 6px);
   }
 }
+
+
+/* Marca limpa: o SVG já trata o fundo, sem blend que altere as cores */
+.brand__logo{
+  mix-blend-mode:normal!important;
+}
