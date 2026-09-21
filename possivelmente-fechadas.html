@@ -1,22 +1,83 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#03080f"><title>Possivelmente Fechadas • Central OS</title><link rel="stylesheet" href="/styles.css"></head><body><div class="app-shell"><aside class="sidebar" aria-label="Navegação principal">
-<a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
-<nav class="navigation"><div class="nav-label">Menu</div>
-<a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
-<a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
-<a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
-<a class="nav-link active" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
-<a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
-<a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a></nav>
-<div class="sidebar-card"><div class="sidebar-card__label">Motor local</div><div class="sidebar-card__status"><span class="pulse-dot"></span><span>TÉC.PLAY ativo</span></div><div class="sidebar-card__message">A página consulta o histórico real no computador local. Nenhum fechamento é automático.</div></div>
-<div class="sidebar-meta">Central OS • V1<br>Play Soluções</div></aside><main class="main">
-<section class="topbar"><div><span class="section-kicker">Conferência de conclusão</span><h1 class="page-title">Possivelmente Fechadas</h1><p class="page-subtitle">OS com indícios de que o serviço já foi concluído, mas que ainda precisam de conferência humana.</p></div><div class="topbar__actions"><button class="icon-button mobile-menu" data-menu-toggle>☰</button><a class="secondary-button" href="/relatorio">Ver relatório</a></div></section>
-<section class="hero-panel"><div class="hero-panel__row"><div><span class="panel__kicker">Grupo piloto</span><h2>TÉC.PLAY</h2><p>O motor busca retroativamente o período escolhido, separa as OS e mostra as mensagens que fizeram o sistema entender que pode ter havido conclusão.</p></div><div class="filterbar"><label for="days">Período<select id="days"><option value="20">Últimos 20 dias</option><option value="30" selected>Últimos 30 dias</option></select></label><button id="refresh" class="primary-button" type="button">Analisar</button></div></div></section>
-<section class="summary-row">
-<article class="stat-card info"><span class="stat-card__label">Período</span><b id="periodValue" class="stat-card__value">30 dias</b><span class="stat-card__meta">Janela retroativa</span></article>
-<article class="stat-card"><span class="stat-card__label">Mensagens no período</span><b id="messageCount" class="stat-card__value">—</b><span class="stat-card__meta">Histórico lido</span></article>
-<article class="stat-card"><span class="stat-card__label">OS estruturadas</span><b id="structuredCount" class="stat-card__value">—</b><span class="stat-card__meta">OS reconhecidas</span></article>
-<article class="stat-card success"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Exigem conferência</span></article>
-</section>
-<section class="panel"><div class="panel-title-row"><div><span class="panel__kicker">Conferência</span><h2 style="margin:6px 0 0">OS encontradas</h2></div><span id="agentStatus" class="status-badge loading">Conectando ao motor local…</span></div><p class="muted">Cada card mostra os detalhes da OS e as evidências que sustentaram a classificação. Nenhuma OS é alterada automaticamente.</p><div id="results" class="closed-list"><div class="empty-state">Carregando análise…</div></div></section>
-<div class="footer">Central OS • Possivelmente Fechadas • TÉC.PLAY</div>
-</main></div><script src="/ui.js"></script><script type="module" src="/possivelmente-fechadas.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#03080f">
+  <title>Possivelmente Fechadas • Central OS</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Navegação principal">
+    <a class="brand" href="/"><span class="brand__icon">OS</span><span><span class="brand__text">Central OS</span><span class="brand__sub">Play Soluções</span></span></a>
+    <nav class="navigation">
+      <div class="nav-label">Menu</div>
+      <a class="nav-link" href="/"><span class="nav-link__icon">⌂</span>Dashboard</a>
+      <a class="nav-link" href="/importar-planilha"><span class="nav-link__icon">⇧</span>Importar Planilha</a>
+      <a class="nav-link" href="/relatorio"><span class="nav-link__icon">≡</span>Relatório</a>
+      <a class="nav-link active" href="/possivelmente-fechadas"><span class="nav-link__icon">✓</span>Possivelmente Fechadas</a>
+      <a class="nav-link" href="/grupos"><span class="nav-link__icon">◎</span>Grupos</a>
+      <a class="nav-link" href="/configuracoes"><span class="nav-link__icon">⚙</span>Configurações</a>
+    </nav>
+    <div class="sidebar-card">
+      <div class="sidebar-card__label">Fluxo ativo</div>
+      <div class="sidebar-card__status"><span class="pulse-dot"></span><span>Planilha → TÉC.PLAY</span></div>
+      <div class="sidebar-card__message">Somente OS presentes na planilha importada entram nesta conferência.</div>
+    </div>
+    <div class="sidebar-meta">Central OS • V1<br>Play Soluções</div>
+  </aside>
+
+  <main class="main">
+    <section class="topbar">
+      <div>
+        <span class="section-kicker">Conferência de conclusão</span>
+        <h1 class="page-title">Possivelmente Fechadas</h1>
+        <p class="page-subtitle">A Central OS procura no TÉC.PLAY apenas as OS presentes na planilha e mostra por que cada uma pode já ter sido concluída.</p>
+      </div>
+      <div class="topbar__actions">
+        <button class="icon-button mobile-menu" data-menu-toggle aria-label="Abrir menu">☰</button>
+        <a class="secondary-button" href="/importar-planilha">Trocar planilha</a>
+        <a class="secondary-button" href="/relatorio">Ver relatório</a>
+      </div>
+    </section>
+
+    <section class="hero-panel">
+      <div class="hero-panel__row">
+        <div>
+          <span class="panel__kicker">Etapas 02 a 05</span>
+          <h2>Localizar, relacionar, classificar e provar</h2>
+          <p id="closedHeroText">A planilha é a referência. O grupo é usado para localizar cada OS, relacionar o contexto e encontrar evidências de conclusão.</p>
+        </div>
+        <div class="filterbar">
+          <label for="days">Período
+            <select id="days"><option value="20">Últimos 20 dias</option><option value="30" selected>Últimos 30 dias</option></select>
+          </label>
+          <button id="refresh" class="primary-button" type="button">Analisar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary-row">
+      <article class="stat-card info"><span class="stat-card__label">Período</span><b id="periodValue" class="stat-card__value">30 dias</b><span class="stat-card__meta">Janela retroativa</span></article>
+      <article class="stat-card"><span class="stat-card__label">OS na planilha</span><b id="spreadsheetCount" class="stat-card__value">—</b><span class="stat-card__meta">Referência principal</span></article>
+      <article class="stat-card info"><span class="stat-card__label">Localizadas no grupo</span><b id="matchedCount" class="stat-card__value">—</b><span id="matchedMeta" class="stat-card__meta">Correspondência encontrada</span></article>
+      <article class="stat-card success"><span class="stat-card__label">Possivelmente fechadas</span><b id="closedCount" class="stat-card__value">—</b><span class="stat-card__meta">Exigem conferência</span></article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title-row">
+        <div><span class="panel__kicker">Conferência</span><h2 style="margin:6px 0 0">OS encontradas</h2></div>
+        <span id="agentStatus" class="status-badge loading">Conectando ao motor local…</span>
+      </div>
+      <p class="muted">Cada card mostra a OS da planilha, a mensagem localizada no WhatsApp e as evidências que sustentaram a classificação. Nenhuma OS é alterada automaticamente.</p>
+      <div id="results" class="closed-list"><div class="empty-state">Carregando análise…</div></div>
+    </section>
+
+    <div class="footer">Central OS • Possivelmente Fechadas • Planilha como referência</div>
+  </main>
+</div>
+<script src="/ui.js"></script>
+<script type="module" src="/possivelmente-fechadas.js"></script>
+</body>
+</html>
