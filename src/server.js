@@ -332,7 +332,7 @@ async function processAnalysis() {
   const view20 = viewForDays(full, 20);
 
   await writeAnalysisCache({
-    version: 2,
+    version: 3,
     importId: currentImport.importId,
     generatedAt: new Date().toISOString(),
     full,
@@ -349,7 +349,7 @@ async function getCachedAnalysis(days = 30, { processIfMissing = false } = {}) {
   const currentImport = await requireImport();
   const cache = await readAnalysisCache();
 
-  if (cache?.importId === currentImport.importId && cache?.full) {
+  if (cache?.version === 3 && cache?.importId === currentImport.importId && cache?.full) {
     const normalized = days === 20 ? 20 : 30;
     return cache?.views?.[String(normalized)] || viewForDays(cache.full, normalized);
   }
@@ -383,7 +383,7 @@ async function getSummary() {
   if (!current) return { imported: false, counts: {} };
 
   const cache = await readAnalysisCache();
-  if (cache?.importId !== current.importId || !cache?.full) {
+  if (cache?.version !== 3 || cache?.importId !== current.importId || !cache?.full) {
     return {
       imported: true,
       import: publicImportSummary(current, { preview: 0 }),
