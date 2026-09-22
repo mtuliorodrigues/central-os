@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+if [[ "$1" == "info" ]]; then echo "26.0.0-test"; exit 0; fi
+if [[ "$1" == "exec" && "$3" == "pg_isready" ]]; then echo "localhost:5432 - accepting connections"; exit 0; fi
+if [[ "$1" == "exec" && "$3" == "psql" ]]; then
+  sql="${@: -1}"
+  if [[ "$sql" == *"SELECT 1"* ]]; then echo "1"; exit 0; fi
+  if [[ "$sql" == *'FROM "Chat"'* ]]; then
+    echo '{"remoteJid":"111111111111@g.us","name":"TÉC.PLAY"}'
+    exit 0
+  fi
+  if [[ "$sql" == *'FROM "Message"'* ]]; then
+    ts=$(date +%s); ts2=$((ts+10))
+    printf '%s\n' "{\"id\":\"row1\",\"key\":{\"id\":\"MSG1\",\"remoteJid\":\"111111111111@g.us\",\"fromMe\":false},\"pushName\":\"Operador\",\"participant\":\"5534999999999@s.whatsapp.net\",\"messageType\":\"conversation\",\"message\":{\"conversation\":\"*Cliente:* Maria Sintetica\\n*OS:* 9001\\n*ID:* 12345\\n*Login:* maria\\n*Serviço:* Internet Fibra\\n*Descrição:* Sem conexão teste sintético\"},\"contextInfo\":{},\"messageTimestamp\":$ts}"
+    printf '%s\n' "{\"id\":\"row2\",\"key\":{\"id\":\"MSG2\",\"remoteJid\":\"111111111111@g.us\",\"fromMe\":false},\"pushName\":\"Tecnico\",\"participant\":\"5534888888888@s.whatsapp.net\",\"messageType\":\"extendedTextMessage\",\"message\":{\"extendedTextMessage\":{\"text\":\"Bom dia, foi feita\",\"contextInfo\":{\"stanzaId\":\"MSG1\",\"quotedMessage\":{\"conversation\":\"*Cliente:* Maria Sintetica\\n*OS:* 9001\\n*ID:* 12345\\n*Login:* maria\\n*Serviço:* Internet Fibra\\n*Descrição:* Sem conexão teste sintético\"}}}},\"contextInfo\":{},\"messageTimestamp\":$ts2}"
+    exit 0
+  fi
+fi
+echo "fake docker: unsupported args: $*" >&2
+exit 1

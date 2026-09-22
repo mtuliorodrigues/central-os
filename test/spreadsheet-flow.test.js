@@ -24,7 +24,7 @@ test("importa CSV separado por ponto e vírgula sem quebrar vírgula da descriç
 test("usa a planilha como referência e encontra evidência de conclusão por resposta direta", async () => {
   const messages = [
     {
-      key: { id: "os-1", remoteJid: "553497702861-1601827551@g.us" },
+      key: { id: "os-1", remoteJid: "000000000000000000@g.us" },
       pushName: "Tulio",
       messageTimestamp: 1000,
       message: {
@@ -32,7 +32,7 @@ test("usa a planilha como referência e encontra evidência de conclusão por re
       }
     },
     {
-      key: { id: "reply-1", remoteJid: "553497702861-1601827551@g.us" },
+      key: { id: "reply-1", remoteJid: "000000000000000000@g.us" },
       pushName: "Wander",
       messageTimestamp: 1010,
       message: {
@@ -48,7 +48,7 @@ test("usa a planilha como referência e encontra evidência de conclusão por re
       }
     },
     {
-      key: { id: "os-2", remoteJid: "553497702861-1601827551@g.us" },
+      key: { id: "os-2", remoteJid: "000000000000000000@g.us" },
       pushName: "Tulio",
       messageTimestamp: 1100,
       message: {
@@ -110,7 +110,7 @@ test("mantém o grupo de origem e não mistura contexto entre grupos", () => {
 
   const messages = [
     {
-      __groupName: "TÉC.PLAY",
+      __groupName: "GRUPO_EXEMPLO",
       __groupJid: groupA,
       key: { id: "root-a", remoteJid: groupA },
       messageTimestamp: 2000,
@@ -124,7 +124,7 @@ test("mantém o grupo de origem e não mistura contexto entre grupos", () => {
       message: { conversation: "foi feito" }
     },
     {
-      __groupName: "TÉC.PLAY",
+      __groupName: "GRUPO_EXEMPLO",
       __groupJid: groupA,
       key: { id: "reply-a", remoteJid: groupA },
       messageTimestamp: 2002,
@@ -150,10 +150,10 @@ test("mantém o grupo de origem e não mistura contexto entre grupos", () => {
   }];
 
   const analysis = analyzeSpreadsheetReferences(messages, references, { days: 30 });
-  assert.equal(analysis.items[0].groupName, "TÉC.PLAY");
+  assert.equal(analysis.items[0].groupName, "GRUPO_EXEMPLO");
   assert.equal(analysis.items[0].classification, "possivelmente_realizada");
   assert.equal(analysis.items[0].evidence.length, 1);
-  assert.equal(analysis.items[0].evidence[0].groupName, "TÉC.PLAY");
+  assert.equal(analysis.items[0].evidence[0].groupName, "GRUPO_EXEMPLO");
 });
 
 

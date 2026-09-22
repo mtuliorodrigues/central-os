@@ -1,26 +1,52 @@
-import "dotenv/config";
+import "./integrated-env.js";
 import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
+import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readGroupHistoryFromDocker, listWhatsAppGroupsFromDocker } from "./postgres-docker.js";
 import { analyzeSpreadsheetReferences } from "./possibly-closed.js";
 import { parseSpreadsheetBuffer, publicImportSummary } from "./spreadsheet-import.js";
+import {
+  getRelatorioStatus,
+  getRelatorioConfig,
+  getRelatorioLogs,
+  listSpreadsheets,
+  executeReport
+} from "./relatorio-bridge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-const dataDir = path.join(root, "data");
+const dataDir = path.resolve(process.env.CENTRAL_OS_DATA_DIR || path.join(root, "data"));
 const importFile = path.join(dataDir, "current-import.json");
 const analysisFile = path.join(dataDir, "current-analysis.json");
 const historyFile = path.join(dataDir, "analysis-history.json");
 const historyDetailsDir = path.join(dataDir, "history-details");
 const port = Number(process.env.CENTRAL_OS_PORT || 8787);
+const frontendDist = path.join(root, "frontend", "dist");
+const forceLegacyUi = /^(1|true|yes|sim|on)$/i.test(String(process.env.CENTRAL_OS_LEGACY_UI || ""));
+const modernFrontendEnabled = !forceLegacyUi && existsSync(path.join(frontendDist, "index.html"));
 
-const primaryGroupJid = process.env.SOURCE_GROUP_JID || "000000000000000000@g.us";
-const primaryGroupName = process.env.SOURCE_GROUP_NAME || "GRUPO_EXEMPLO";
+const contentTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2"
+};
+
+const primaryGroupJid = process.env.SOURCE_GROUP_JID || "";
+const primaryGroupName = process.env.SOURCE_GROUP_NAME || "TÉC.PLAY";
 const defaultGroupNames = [
-  "GRUPO_EXEMPLO",
+  "TÉC.PLAY",
   "ORDEM DE SERVIÇO - PLAY SOLUÇÕES",
   "Rede Play",
   "O.S DIARIA",
@@ -546,6 +572,37 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
 
+    if (url.pathname === "/api/relatorio/status" && req.method === "GET") {
+      return json(res, 200, await getRelatorioStatus());
+    }
+
+    if (url.pathname === "/api/relatorio/config" && req.method === "GET") {
+      return json(res, 200, await getRelatorioConfig());
+    }
+
+    if (url.pathname === "/api/relatorio/logs" && req.method === "GET") {
+      return json(res, 200, { logs: await getRelatorioLogs() });
+    }
+
+    if (url.pathname === "/api/relatorio/planilhas" && req.method === "GET") {
+      return json(res, 200, { planilhas: await listSpreadsheets() });
+    }
+
+    if (url.pathname === "/api/relatorio/executar" && req.method === "POST") {
+      const body = await readJsonBody(req, 1024 * 1024);
+      return json(res, 200, await executeReport({ fileName: body?.fileName }));
+    }
+
+    if (url.pathname === "/api/health" && req.method === "GET") {
+      const relatorio = await getRelatorioStatus();
+      return json(res, 200, {
+        ok: true,
+        service: "central-os-integrada",
+        checkedAt: new Date().toISOString(),
+        relatorio
+      });
+    }
+
     if (url.pathname === "/api/planilha/status" && req.method === "GET") {
       return json(res, 200, publicImportSummary(await getCurrentImport()));
     }
@@ -614,6 +671,21 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, await getPossiblyClosed(days));
     }
 
+    if (modernFrontendEnabled && req.method === "GET") {
+      const pathname = decodeURIComponent(url.pathname);
+      const candidate = path.resolve(frontendDist, `.${pathname}`);
+      const allowedRoot = `${path.resolve(frontendDist)}${path.sep}`;
+      const isSafeAsset = candidate.startsWith(allowedRoot) && existsSync(candidate) && statSync(candidate).isFile();
+      const file = isSafeAsset ? candidate : path.join(frontendDist, "index.html");
+      const type = contentTypes[path.extname(file).toLowerCase()] || "application/octet-stream";
+      const body = await readFile(file);
+      res.writeHead(200, {
+        "content-type": type,
+        "cache-control": isSafeAsset && /\.[a-f0-9]{8,}\./i.test(path.basename(file)) ? "public, max-age=31536000, immutable" : "no-store"
+      });
+      return res.end(body);
+    }
+
     const entry = staticFiles.get(url.pathname);
     if (!entry) {
       res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
@@ -633,6 +705,7 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Central OS: http://127.0.0.1:${port}`);
+const host = process.env.CENTRAL_OS_HOST || "127.0.0.1";
+server.listen(port, host, () => {
+  console.log(`Central OS: http://${host}:${port}`);
 });

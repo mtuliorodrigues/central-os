@@ -4,8 +4,8 @@ import { readGroupHistoryFromDocker } from "./postgres-docker.js";
 import { analyzeHistory } from "./analyzer.js";
 import { saveRun } from "./store.js";
 
-const group = process.env.SOURCE_GROUP_JID || "000000000000000000@g.us";
-const groupName = process.env.SOURCE_GROUP_NAME || "GRUPO_EXEMPLO";
+const group = process.env.SOURCE_GROUP_JID || "";
+const groupName = process.env.SOURCE_GROUP_NAME || "TÉC.PLAY";
 const limit = Number(process.env.HISTORY_LIMIT || 4114);
 const source = process.env.HISTORY_SOURCE || "postgres-docker";
 

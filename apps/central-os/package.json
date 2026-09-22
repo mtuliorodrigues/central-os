@@ -1,0 +1,23 @@
+{
+  "name": "central-os",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "web": "node src/server.js",
+    "analyze:legacy": "node src/index.js",
+    "check": "node --check src/index.js && node --check src/server.js && node --check src/spreadsheet-import.js && node --check src/possibly-closed.js && node --check src/postgres-docker.js && node --check src/evolution.js && node --check src/analyzer.js && node --check src/store.js && node --check local-api.js && node --check dashboard.js && node --check importar-planilha.js && node --check relatorio.js && node --check possivelmente-fechadas.js && node --check analysis-list.js && node --check historico.js && node --check grupos.js && node --check ui.js && node --check global-import.js",
+    "test": "node --test",
+    "dev": "node scripts/dev.mjs",
+    "dev:backend": "node src/server.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:typecheck": "npm --prefix frontend run typecheck",
+    "frontend:lint": "npm --prefix frontend run lint"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0"
+  }
+}

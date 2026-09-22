@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Central OS Integrada</title><link rel="stylesheet" href="/styles.css"></head>
+<body data-page="dashboard">
+<div class="shell">
+  <aside class="sidebar" data-autonav></aside>
+  <main class="main">
+    <header class="topbar"><div><span class="eyebrow">PLAY SOLUÇÕES</span><h1>Central OS</h1><p>Uma interface, dois motores especializados.</p></div><button class="menu" data-menu-toggle>☰</button></header>
+    <section class="integration-banner"><span class="dot"></span><strong>Integração isolada</strong><span>Central OS + Relatório OS usando a infraestrutura Evolution/PostgreSQL existente.</span></section>
+    <section class="dashboard-grid">
+      <article class="panel primary-panel">
+        <div class="panel-head"><div><span class="eyebrow">Análise e acompanhamento</span><h2>Central OS</h2></div><span id="analysisBadge" class="badge neutral">Consultando</span></div>
+        <div class="import-row">
+          <div><strong id="dashboardFile">Nenhuma planilha carregada</strong><span id="dashboardUpdated">Importe uma planilha para iniciar a análise.</span></div>
+          <label class="button primary">Importar planilha<input id="analysisFile" type="file" accept=".xlsx,.csv" hidden></label>
+        </div>
+        <div class="stats">
+          <a href="/historico" class="stat"><span>Relatórios</span><b id="reportsCount">—</b><small>Histórico</small></a>
+          <a href="/os-analisadas" class="stat"><span>Analisadas</span><b id="analyzedCount">—</b><small>Última análise</small></a>
+          <a href="/localizadas" class="stat ok"><span>Localizadas</span><b id="locatedCount">—</b><small>Nos grupos</small></a>
+          <a href="/nao-localizadas" class="stat bad"><span>Não localizadas</span><b id="missingCount">—</b><small>Sem correspondência</small></a>
+          <a href="/possivelmente-fechadas" class="stat ok"><span>Poss. fechadas</span><b id="closedCount">—</b><small>Com indícios</small></a>
+          <a href="/pendentes" class="stat warn"><span>Pendentes</span><b id="pendingCount">—</b><small>Revisão necessária</small></a>
+        </div>
+        <div id="analysisMessage" class="message" hidden></div>
+      </article>
+
+      <aside class="panel report-panel">
+        <div class="panel-head"><div><span class="eyebrow">Automação</span><h2>Relatório OS</h2></div><span id="reportReady" class="badge neutral">Verificando</span></div>
+        <div class="health-list">
+          <div><span class="health-dot" id="dotEvolution"></span><p><b>Evolution</b><small id="statusEvolution">—</small></p></div>
+          <div><span class="health-dot" id="dotPostgres"></span><p><b>PostgreSQL</b><small id="statusPostgres">—</small></p></div>
+          <div><span class="health-dot" id="dotWhatsapp"></span><p><b>WhatsApp</b><small id="statusWhatsapp">—</small></p></div>
+          <div><span class="health-dot" id="dotListener"></span><p><b>Listener</b><small id="statusListener">—</small></p></div>
+        </div>
+        <div class="report-meta">
+          <div><span>Grupo de origem</span><strong id="originGroup">—</strong></div>
+          <div><span>Grupo de destino</span><strong id="destinationGroup">—</strong></div>
+          <div><span>Último relatório</span><strong id="lastReport">Nenhum registrado</strong></div>
+        </div>
+        <div class="report-actions">
+          <label>Planilha<select id="reportSheet"><option value="">Carregando…</option></select></label>
+          <button id="runReport" class="button primary" disabled>Executar relatório</button>
+          <button id="refreshReport" class="button secondary">Atualizar status</button>
+        </div>
+        <p id="executionHint" class="hint">A execução pelo painel permanece protegida até a validação do baseline manual.</p>
+        <div id="reportMessage" class="message" hidden></div>
+      </aside>
+    </section>
+  </main>
+</div>
+<script src="/ui.js"></script><script type="module" src="/dashboard.js"></script>
+</body></html>

@@ -1,0 +1,13 @@
+.git
+**/.git
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.venv
+**/.env
+config/app.env
+logs
+data
+*.zip
+*.bundle
+*.sha256

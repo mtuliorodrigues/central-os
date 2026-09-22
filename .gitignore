@@ -1,6 +1,127 @@
-node_modules/
-.env
-data/*.json
-!data/.gitkeep
+# -----------------------------------------------------------------------------
+# Secrets and machine-local configuration
+# -----------------------------------------------------------------------------
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
 
-data/history-details/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*credentials*.json
+*service-account*.json
+*secret*.json
+*token*.json
+
+# Local configuration/state that may contain identifiers or credentials
+/config/app.env
+/apps/relatorio-os/config/grupos_relatorio_os.json
+/apps/relatorio-os/config/usuarios_relatorio.json
+
+# -----------------------------------------------------------------------------
+# AWS/V3 belongs to a separate project
+# -----------------------------------------------------------------------------
+/aws/
+/deploy/aws/
+
+# -----------------------------------------------------------------------------
+# Dependencies, runtimes and generated build output
+# -----------------------------------------------------------------------------
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyd
+
+dist/
+build/
+coverage/
+.coverage
+.nyc_output/
+.cache/
+.vite/
+*.tsbuildinfo
+
+# Generated config artifacts; the TypeScript sources are authoritative
+/apps/**/frontend/tailwind.config.js
+/apps/**/frontend/tailwind.config.d.ts
+/apps/**/frontend/vite.config.js
+/apps/**/frontend/vite.config.d.ts
+
+# -----------------------------------------------------------------------------
+# Operational data, customer files, databases and logs
+# -----------------------------------------------------------------------------
+/data/**
+!/data/**/
+!/data/**/.gitkeep
+
+/apps/**/data/**
+!/apps/**/data/
+!/apps/**/data/**/
+!/apps/**/data/**/.gitkeep
+
+/apps/**/saida/
+/apps/**/logs/
+/apps/**/logs*/
+
+/logs/**
+!/logs/
+!/logs/**/
+!/logs/**/.gitkeep
+
+*.log
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.ods
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.dump
+*.sql.gz
+
+# -----------------------------------------------------------------------------
+# Backups, archives, temporary files and editor/OS metadata
+# -----------------------------------------------------------------------------
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.backup
+*.orig
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+
+# -----------------------------------------------------------------------------
+# Preserved local snapshots/duplicates; keep on disk, never version them
+# -----------------------------------------------------------------------------
+/Nova pasta/
+/apps/Nova pasta/
+/fonrend/
+/scripts/start_CORRIGIDO.ps1
+/scripts/healthcheck_CORRIGIDO.ps1
