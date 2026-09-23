@@ -1,7 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title Central OS Integrada
+title Central OS Local
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\start.ps1"
 set "RC=%ERRORLEVEL%"
 echo.
@@ -10,7 +10,7 @@ if not "%RC%"=="0" (
   echo Consulte logs\inicializador.
   pause
 ) else (
-  echo [OK] Central OS Integrada pronta.
+  echo [OK] Central OS Local pronta para uso.
   echo Esta janela pode ser fechada.
 )
 exit /b %RC%
