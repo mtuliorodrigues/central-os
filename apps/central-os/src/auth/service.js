@@ -11,7 +11,16 @@ function tokenHash(token) {
 }
 
 function publicUser(row) {
-  return { id: row.id, name: row.name, username: row.username, role: row.role, avatar: row.avatar || null };
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    role: row.role,
+    avatar: row.avatar || null,
+    ...(typeof row.active === "boolean" ? { active: row.active } : {}),
+    ...(row.created_at ? { createdAt: new Date(row.created_at).toISOString() } : {}),
+    ...(row.last_login_at ? { lastLoginAt: new Date(row.last_login_at).toISOString() } : {})
+  };
 }
 
 async function withPool(pool, fn) {
@@ -20,12 +29,129 @@ async function withPool(pool, fn) {
   try { return await fn(ownPool); } finally { if (!pool) await ownPool.end(); }
 }
 
-async function audit(client, { userId = null, actorType = "USER", action, result, source = "central-os-auth", context = {} }) {
-  await client.query(
-    `INSERT INTO audit_events (id, user_id, actor_type, source, action, resource_type, result, context)
-     VALUES ($1, $2, $3, $4, $5, 'auth', $6, $7::jsonb)`,
-    [randomUUID(), userId, actorType, source, action, result, JSON.stringify(context)]
+async function audit(client, { userId = null, actorType = "USER", actorRef = null, action, result, source = "central-os-auth", resourceType = "user", resourceId = userId, context = {} }) {
+    await client.query(
+    `INSERT INTO audit_events (id, user_id, actor_type, actor_ref, source, action, resource_type, resource_id, result, context)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)`,
+    [randomUUID(), userId, actorType, actorRef, source, action, resourceType, resourceId, result, JSON.stringify(context)]
   );
+}
+
+function cleanProfile({ name, avatar }) {
+  const cleanName = String(name || "").trim();
+  const cleanAvatar = String(avatar || "").trim();
+  if (!cleanName) throw Object.assign(new Error("Nome é obrigatório."), { code: "invalid_profile", statusCode: 400 });
+  if (cleanName.length > 160 || cleanAvatar.length > 500) throw Object.assign(new Error("Perfil excede o limite permitido."), { code: "invalid_profile", statusCode: 400 });
+  return { name: cleanName, avatar: cleanAvatar || null };
+}
+
+async function revokeSessions(client, userId) {
+  const result = await client.query("UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL", [userId]);
+  return result.rowCount || 0;
+}
+
+export async function listUsers({ pool = null } = {}) {
+  return withPool(pool, async db => {
+    const result = await db.query(`SELECT id, name, username, role, active, avatar, created_at, last_login_at FROM users ORDER BY active DESC, name ASC, username ASC`);
+    return result.rows.map(publicUser).map((user, index) => ({ ...user, active: result.rows[index].active }));
+  });
+}
+
+export async function createUser({ name, username, password, avatar = null, actorId, pool = null }) {
+  const profile = cleanProfile({ name, avatar });
+  const cleanUsername = String(username || "").trim();
+  if (!cleanUsername || cleanUsername.length > 120) throw Object.assign(new Error("Username é obrigatório."), { code: "invalid_username", statusCode: 400 });
+  if (!password) throw Object.assign(new Error("Senha inicial é obrigatória."), { code: "invalid_password", statusCode: 400 });
+  const passwordHash = await hashPassword(password);
+  return withPool(pool, async db => {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      const id = randomUUID();
+      await client.query(`INSERT INTO users (id, name, username, password_hash, role, active, avatar) VALUES ($1, $2, $3, $4, 'USER', true, $5)`, [id, profile.name, cleanUsername, passwordHash, profile.avatar]);
+      await audit(client, { userId: id, actorRef: actorId, actorType: "USER", action: "user_created", result: "success", context: { role: "USER" } });
+      await client.query("COMMIT");
+      return publicUser({ id, name: profile.name, username: cleanUsername, role: "USER", active: true, avatar: profile.avatar });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      if (error.code === "23505") throw Object.assign(new Error("Username já existe."), { code: "username_exists", statusCode: 409 });
+      throw error;
+    } finally { client.release(); }
+  });
+}
+
+export async function updateUserProfile({ targetId, name, avatar, actorId, pool = null }) {
+  const profile = cleanProfile({ name, avatar });
+  return withPool(pool, async db => {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      const found = await client.query("SELECT id, name, username, role, active, avatar, created_at, last_login_at FROM users WHERE id = $1 FOR UPDATE", [targetId]);
+      if (!found.rowCount) throw Object.assign(new Error("Usuário não encontrado."), { code: "user_not_found", statusCode: 404 });
+      await client.query("UPDATE users SET name = $1, avatar = $2, updated_at = now() WHERE id = $3", [profile.name, profile.avatar, targetId]);
+      await audit(client, { userId: targetId, actorRef: actorId, action: "user_updated", result: "success", context: { fields: ["name", "avatar"] } });
+      await client.query("COMMIT");
+      return publicUser({ ...found.rows[0], name: profile.name, avatar: profile.avatar });
+    } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
+  });
+}
+
+export async function setUserActive({ targetId, active, actorId, pool = null }) {
+  return withPool(pool, async db => {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      const found = await client.query("SELECT id, name, username, role, active, avatar, created_at, last_login_at FROM users WHERE id = $1 FOR UPDATE", [targetId]);
+      if (!found.rowCount) throw Object.assign(new Error("Usuário não encontrado."), { code: "user_not_found", statusCode: 404 });
+      const user = found.rows[0];
+      if (user.role === "MASTER_ADMIN" && (!active || user.id === actorId)) throw Object.assign(new Error("O MASTER_ADMIN atual não pode ser desativado."), { code: "master_admin_protected", statusCode: 409 });
+      await client.query("UPDATE users SET active = $1, updated_at = now() WHERE id = $2", [Boolean(active), targetId]);
+      if (!active) await revokeSessions(client, targetId);
+      await audit(client, { userId: targetId, actorRef: actorId, action: active ? "user_enabled" : "user_disabled", result: "success" });
+      if (!active) await audit(client, { userId: targetId, actorRef: actorId, action: "sessions_revoked", result: "success" });
+      await client.query("COMMIT");
+      return publicUser({ ...user, active: Boolean(active) });
+    } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
+  });
+}
+
+export async function resetUserPassword({ targetId, password, actorId, pool = null }) {
+  if (!password) throw Object.assign(new Error("Nova senha é obrigatória."), { code: "invalid_password", statusCode: 400 });
+  const passwordHash = await hashPassword(password);
+  return withPool(pool, async db => {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      const found = await client.query("SELECT role FROM users WHERE id = $1 FOR UPDATE", [targetId]);
+      if (!found.rowCount) throw Object.assign(new Error("Usuário não encontrado."), { code: "user_not_found", statusCode: 404 });
+      if (found.rows[0].role === "MASTER_ADMIN") throw Object.assign(new Error("Reset administrativo é permitido somente para USER."), { code: "master_admin_protected", statusCode: 409 });
+      await client.query("UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2", [passwordHash, targetId]);
+      await revokeSessions(client, targetId);
+      await audit(client, { userId: targetId, actorRef: actorId, action: "password_reset_by_admin", result: "success" });
+      await audit(client, { userId: targetId, actorRef: actorId, action: "sessions_revoked", result: "success" });
+      await client.query("COMMIT");
+      return { ok: true };
+    } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
+  });
+}
+
+export async function changeOwnPassword({ userId, currentPassword, newPassword, currentToken, pool = null }) {
+  if (!currentPassword || !newPassword) throw Object.assign(new Error("As senhas são obrigatórias."), { code: "invalid_password", statusCode: 400 });
+  return withPool(pool, async db => {
+    const client = await db.connect();
+    try {
+      await client.query("BEGIN");
+      const found = await client.query("SELECT password_hash FROM users WHERE id = $1 FOR UPDATE", [userId]);
+      if (!found.rowCount || !(await verifyPassword(currentPassword, found.rows[0].password_hash))) throw Object.assign(new Error("Senha atual inválida."), { code: "invalid_current_password", statusCode: 401 });
+      if (await verifyPassword(newPassword, found.rows[0].password_hash)) throw Object.assign(new Error("A nova senha deve ser diferente."), { code: "same_password", statusCode: 400 });
+      await client.query("UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2", [await hashPassword(newPassword), userId]);
+      await revokeSessions(client, userId);
+      await audit(client, { userId, actorRef: userId, action: "password_changed", result: "success" });
+      await audit(client, { userId, actorRef: userId, action: "sessions_revoked", result: "success" });
+      await client.query("COMMIT");
+      return { ok: true, revokedCurrent: Boolean(currentToken) };
+    } catch (error) { await client.query("ROLLBACK"); throw error; } finally { client.release(); }
+  });
 }
 
 export async function bootstrapMasterAdmin({ name, username, password, pool = null }) {
@@ -127,4 +253,4 @@ export async function logout(token, { pool = null } = {}) {
   });
 }
 
-export { publicUser, tokenHash };
+export { publicUser, tokenHash, audit, revokeSessions };

@@ -167,7 +167,12 @@ export type AuthUser = {
   username: string;
   role: "MASTER_ADMIN" | "USER" | string;
   avatar?: string | null;
+  active?: boolean;
+  createdAt?: string;
+  lastLoginAt?: string | null;
 };
+
+export type AdminUsersResponse = { users: AuthUser[] };
 
 export type SpreadsheetInfo = {
   name: string;

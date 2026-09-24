@@ -10,6 +10,7 @@ type AuthContextValue = {
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (user: AuthUser) => void;
 };
 
 const TOKEN_KEY = "central_os_session_token";
@@ -69,6 +70,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearSessionToken();
       setUser(null);
       setError(null);
+    },
+    updateUser(nextUser) {
+      setUser(nextUser);
     }
   }), [error, loading, user]);
 

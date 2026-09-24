@@ -9,8 +9,17 @@ import { readGroupHistoryFromDocker, listWhatsAppGroupsFromDocker } from "./post
 import { analyzeSpreadsheetReferences } from "./possibly-closed.js";
 import { parseSpreadsheetBuffer, publicImportSummary } from "./spreadsheet-import.js";
 import { centralDatabaseHealth } from "./db/health.js";
-import { authenticated, bearerToken } from "./auth/middleware.js";
-import { login, logout } from "./auth/service.js";
+import { authenticated, bearerToken, requireMasterAdmin } from "./auth/middleware.js";
+import {
+  login,
+  logout,
+  listUsers,
+  createUser,
+  updateUserProfile,
+  setUserActive,
+  resetUserPassword,
+  changeOwnPassword
+} from "./auth/service.js";
 import {
   getRelatorioStatus,
   getRelatorioConfig,
@@ -79,7 +88,7 @@ function cors(req, res) {
   const origin = String(req.headers.origin || "");
   if (origin && allowedOrigins.has(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Private-Network", "true");
 }
@@ -712,10 +721,54 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
+    if (url.pathname === "/api/auth/change-password" && req.method === "POST") {
+      const auth = await authenticated(req);
+      if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+      const body = await readJsonBody(req, 32 * 1024);
+      const result = await changeOwnPassword({
+        userId: auth.user.id,
+        currentPassword: body?.currentPassword,
+        newPassword: body?.newPassword,
+        currentToken: bearerToken(req)
+      });
+      await logout(bearerToken(req));
+      return json(res, 200, result);
+    }
+
+    if (url.pathname === "/api/auth/profile" && req.method === "PATCH") {
+      const auth = await authenticated(req);
+      if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+      const body = await readJsonBody(req, 32 * 1024);
+      return json(res, 200, { user: await updateUserProfile({ targetId: auth.user.id, name: body?.name, avatar: body?.avatar, actorId: auth.user.id }) });
+    }
+
     const publicApi = (url.pathname === "/api/health" || url.pathname === "/api/persistence/health") && req.method === "GET";
     if (url.pathname.startsWith("/api/") && !publicApi) {
       const auth = await authenticated(req);
       if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+    }
+
+    const adminUsersMatch = url.pathname.match(/^\/api\/admin\/users(?:\/([^/]+))?(?:\/(activate|deactivate|reset-password))?$/);
+    if (adminUsersMatch) {
+      const auth = requireMasterAdmin(await authenticated(req));
+      const targetId = adminUsersMatch[1];
+      const action = adminUsersMatch[2];
+      if (req.method === "GET" && !targetId) return json(res, 200, { users: await listUsers() });
+      if (req.method === "POST" && !targetId) {
+        const body = await readJsonBody(req, 32 * 1024);
+        return json(res, 201, { user: await createUser({ ...body, actorId: auth.user.id }) });
+      }
+      if (req.method === "PATCH" && targetId && !action) {
+        const body = await readJsonBody(req, 32 * 1024);
+        return json(res, 200, { user: await updateUserProfile({ targetId, name: body?.name, avatar: body?.avatar, actorId: auth.user.id }) });
+      }
+      if (req.method === "POST" && targetId && (action === "activate" || action === "deactivate")) {
+        return json(res, 200, { user: await setUserActive({ targetId, active: action === "activate", actorId: auth.user.id }) });
+      }
+      if (req.method === "POST" && targetId && action === "reset-password") {
+        const body = await readJsonBody(req, 32 * 1024);
+        return json(res, 200, await resetUserPassword({ targetId, password: body?.password, actorId: auth.user.id }));
+      }
     }
 
     if (url.pathname === "/api/relatorio/status" && req.method === "GET") {
