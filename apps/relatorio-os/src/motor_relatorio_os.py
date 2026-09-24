@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import re
+import sys
 import time
 import unicodedata
 from datetime import datetime, timezone, timedelta
@@ -37,6 +38,18 @@ MODALITY_PRIORITY = [
 SYNC_DEBUG_LOG = None
 
 
+def configure_utf8_stdio():
+    """Mantém a saída do processo em UTF-8 mesmo quando o Windows usa cp1252."""
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure:
+            try:
+                reconfigure(encoding="utf-8", errors="backslashreplace")
+            except (OSError, ValueError):
+                pass
+
+
 def sync_log(msg):
     """
     Registra diagnóstico persistente da segunda busca.
@@ -44,7 +57,6 @@ def sync_log(msg):
     """
     global SYNC_DEBUG_LOG
     line = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
-    print(line)
 
     if SYNC_DEBUG_LOG:
         try:
@@ -52,6 +64,17 @@ def sync_log(msg):
                 f.write(line + "\n")
         except Exception:
             pass
+
+    try:
+        print(line)
+    except UnicodeEncodeError:
+        # O arquivo já preservou o texto integral. O fallback evita que a
+        # code page do console interrompa a execução do motor.
+        stream = getattr(sys, "stdout", None)
+        buffer = getattr(stream, "buffer", None)
+        if buffer:
+            buffer.write((line + "\n").encode("utf-8", errors="backslashreplace"))
+            buffer.flush()
 
 
 
@@ -170,6 +193,11 @@ def is_financeiro(row):
     return norm(row.get("Tipo", "")).startswith("FINANCEIRO")
 
 
+def is_infra(row):
+    """Exclui somente a classificação estrutural exata INFRA."""
+    return norm(row.get("Tipo", "")) == "INFRA"
+
+
 def exclusion_reason(row, ref_date=None):
     if not has_os(row):
         return "SEM OS"
@@ -181,6 +209,8 @@ def exclusion_reason(row, ref_date=None):
         return "SOUSA & RAMOS"
     if is_financeiro(row):
         return "FINANCEIRO"
+    if is_infra(row):
+        return "INFRA"
 
     dias = age_days(row, ref_date=ref_date)
     if dias is not None and dias > MAX_DIAS:
@@ -353,7 +383,8 @@ def ordered_groups(selected: pd.DataFrame):
 # ============================================================
 
 def evolution():
-    load_dotenv(APP_DIR / ".env")
+    env_file = Path(os.getenv("RELATORIO_ENV_FILE") or (APP_DIR.parent / ".env"))
+    load_dotenv(env_file)
 
     key = os.getenv("AUTHENTICATION_API_KEY")
     if not key:
@@ -898,8 +929,8 @@ def forward_original_record(base, instance, headers, destination, record):
 
     if r.status_code == 404:
         raise RuntimeError(
-            "O encaminhamento nativo ainda não está instalado na Evolution. "
-            "Execute INSTALAR_ENCAMINHAMENTO_NATIVO.bat uma vez."
+            "O encaminhamento nativo não está disponível na Evolution em execução. "
+            "Verifique se a instância usa a imagem aprovada e se a rota forwardMessage está instalada."
         )
 
     r.raise_for_status()
@@ -934,6 +965,7 @@ def check_native_forward_endpoint(base, instance, headers):
 # ============================================================
 
 def main():
+    configure_utf8_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("entrada", nargs="?", default="entrada")
     ap.add_argument("--grupo-origem", required=True)
@@ -1081,7 +1113,7 @@ def main():
     if not check_native_forward_endpoint(base, instance, headers):
         raise RuntimeError(
             "Encaminhamento nativo não disponível na Evolution. "
-            "Execute INSTALAR_ENCAMINHAMENTO_NATIVO.bat uma vez e tente novamente."
+            "Verifique se a instância usa a imagem aprovada e se a rota forwardMessage está instalada."
         )
 
     for cid, mod, items in groups:
@@ -1095,7 +1127,7 @@ def main():
         header = f"*SERVIÇOS {cid} {mod}*"
 
         try:
-            send_text(base, instance, headers, args.grupo_destino, header)
+            header_result = send_text(base, instance, headers, args.grupo_destino, header)
             log.append({
                 "Tipo": "CABECALHO",
                 "Cidade": cid,
@@ -1103,6 +1135,7 @@ def main():
                 "OS": "",
                 "Cliente": "",
                 "Resultado": "OK",
+                "MessageIdDestino": ((header_result or {}).get("key") or {}).get("id", ""),
                 "Erro": "",
             })
             print(f"OK | {header}")
@@ -1141,7 +1174,7 @@ def main():
                 continue
 
             try:
-                forward_original_record(
+                forwarded = forward_original_record(
                     base, instance, headers,
                     args.grupo_destino, record
                 )
@@ -1152,9 +1185,10 @@ def main():
                     "OS": osnum,
                     "Cliente": cliente,
                     "Resultado": "OK",
+                    "MessageIdDestino": ((forwarded or {}).get("key") or {}).get("id", ""),
                     "Erro": "",
                 })
-                print(f"OK | OS {osnum} | {cliente}")
+                print(f"OK | OS {osnum} | {cliente} | ID destino {((forwarded or {}).get('key') or {}).get('id', '')}")
             except Exception as e:
                 log.append({
                     "Tipo": "OS",
@@ -1170,7 +1204,7 @@ def main():
             time.sleep(0.7)
 
     try:
-        send_text(base, instance, headers, args.grupo_destino, "*Fim*")
+        end_result = send_text(base, instance, headers, args.grupo_destino, "*Fim*")
         log.append({
             "Tipo": "FIM",
             "Cidade": "",
@@ -1178,6 +1212,7 @@ def main():
             "OS": "",
             "Cliente": "",
             "Resultado": "OK",
+            "MessageIdDestino": ((end_result or {}).get("key") or {}).get("id", ""),
             "Erro": "",
         })
     except Exception as e:

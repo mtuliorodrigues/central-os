@@ -79,6 +79,22 @@ export async function getRelatorioConfig() {
   };
 }
 
+export async function saveRelatorioGroups({ origem, destino } = {}) {
+  const normalize = (value) => {
+    const id = String(value?.id || value?.jid || "").trim();
+    const name = String(value?.name || value?.subject || "").trim();
+    if (!/^[0-9-]+@g\.us$/.test(id)) {
+      throw Object.assign(new Error("Identificador de grupo inválido."), { statusCode: 400, code: "invalid_group_jid" });
+    }
+    return { id, name };
+  };
+
+  const next = { origem: normalize(origem), destino: normalize(destino) };
+  await fs.mkdir(path.dirname(groupsFile), { recursive: true });
+  await fs.writeFile(groupsFile, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+  return next;
+}
+
 async function commandOk(command, args, options = {}) {
   try {
     const result = await execFileAsync(command, args, { timeout: 12000, windowsHide: true, ...options });
@@ -272,6 +288,16 @@ function safeSpreadsheetPath(fileName) {
   const full = path.resolve(spreadsheetsDir, base);
   if (path.dirname(full) !== spreadsheetsDir) throw Object.assign(new Error("Caminho de planilha inválido."), { statusCode: 400, code: "invalid_spreadsheet_path" });
   return full;
+}
+
+export async function saveSpreadsheetFile(fileName, buffer) {
+  const target = safeSpreadsheetPath(fileName);
+  if (!Buffer.isBuffer(buffer) || !buffer.length) {
+    throw Object.assign(new Error("Arquivo de planilha vazio."), { statusCode: 400, code: "empty_spreadsheet" });
+  }
+  await fs.mkdir(spreadsheetsDir, { recursive: true });
+  await fs.writeFile(target, buffer);
+  return { name: path.basename(target), size: buffer.length };
 }
 
 function pythonExecutable() {

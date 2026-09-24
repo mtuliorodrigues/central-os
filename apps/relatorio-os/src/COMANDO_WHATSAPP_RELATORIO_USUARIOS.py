@@ -49,6 +49,15 @@ def norm_cmd(text: str) -> str:
     return re.sub(r"\s+", " ", s)
 
 
+def teamo_contact_value():
+    """Lê o contato autorizado exclusivamente da configuração externa."""
+    return os.getenv("RELATORIO_TEAMO_CONTATO", "").strip()
+
+
+def teamo_message_value():
+    return os.getenv("RELATORIO_TEAMO_MENSAGEM") or MENSAGEM_TEAMO
+
+
 def unwrap_message(message):
     """Remove alguns envelopes comuns do WhatsApp."""
     cur = message if isinstance(message, dict) else {}
@@ -294,8 +303,28 @@ def sender_name(rec):
 
 
 def is_teamo_contact(rec):
-    allowed = phone_variants(CONTATO_TEAMO)
+    configured = teamo_contact_value()
+    if not configured:
+        return False
+    allowed = phone_variants(configured)
     return bool(sender_number_candidates(rec) & allowed)
+
+
+def handle_teamo(base, instance, headers, rec):
+    destino_teamo = resolve_private_reply_jid(rec)
+    origem = _jid_values(rec)
+    write_log(
+        f"COMANDO TEAMO RECEBIDO | origem={origem} | "
+        f"destino={destino_teamo} | contato={teamo_contact_value()}"
+    )
+    try:
+        send_text(base, instance, headers, destino_teamo, teamo_message_value())
+        write_log(f"COMANDO TEAMO RESPONDIDO | destino={destino_teamo}")
+        return destino_teamo
+    except Exception as e:
+        write_log(f"ERRO TEAMO | destino={destino_teamo} | {e}")
+        print(f"[ERRO TEAMO] {e}")
+        return None
 
 
 def resolve_private_reply_jid(rec):
@@ -891,10 +920,10 @@ def main():
     print(f"  {COMANDO_ANTIGO}            -> compatibilidade; equivale a LOCAL")
     print(f"  {COMANDO_REGISTRAR} -> registra o usuário no módulo de relatórios")
     print()
-    print(
-        f"Comando paralelo: !teamo / !te amo somente para "
-        f"+55 34 9682-0410"
-    )
+    if teamo_contact_value():
+        print("Comando paralelo: !teamo / !te amo habilitado pela configuração externa.")
+    else:
+        print("Comando paralelo: !teamo / !te amo desabilitado (contato não configurado).")
     print()
     print("Relatórios: somente usuários registrados com !relatório registrar.")
     print("Deixe esta janela aberta durante o teste.")
@@ -940,27 +969,11 @@ def main():
                 # Comando paralelo: independente do módulo de relatórios.
                 is_teamo_cmd = cmd in {norm_cmd(x) for x in COMANDOS_TEAMO}
                 if is_teamo_cmd and not from_me(rec) and is_teamo_contact(rec):
-                    destino_teamo = resolve_private_reply_jid(rec)
                     print(
                         f"Comando !te amo recebido | origem={_jid_values(rec)} | "
-                        f"destino_resolvido={destino_teamo}"
+                        f"destino_resolvido={resolve_private_reply_jid(rec)}"
                     )
-                    write_log(
-                        f"COMANDO TEAMO RECEBIDO | origem={_jid_values(rec)} | "
-                        f"destino={destino_teamo} | contato={CONTATO_TEAMO}"
-                    )
-                    try:
-                        send_text(
-                            base,
-                            instance,
-                            headers,
-                            destino_teamo,
-                            MENSAGEM_TEAMO,
-                        )
-                        write_log(f"COMANDO TEAMO RESPONDIDO | destino={destino_teamo}")
-                    except Exception as e:
-                        write_log(f"ERRO TEAMO | destino={destino_teamo} | {e}")
-                        print(f"[ERRO TEAMO] {e}")
+                    handle_teamo(base, instance, headers, rec)
                     continue
 
                 if is_teamo_cmd:

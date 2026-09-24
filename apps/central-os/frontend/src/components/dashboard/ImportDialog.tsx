@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FileSpreadsheet, LoaderCircle, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { api, fileToBase64 } from "../../lib/api";
+import { queryKeys } from "../../hooks/useQueries";
 import { formatBytes, formatNumber } from "../../lib/format";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
@@ -54,8 +55,10 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
       setStage("done");
       setMessage("Importação e análise concluídas.");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["summary"] }),
-        queryClient.invalidateQueries({ queryKey: ["history"] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.summary }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.history }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.spreadsheets }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.reportStatus }),
         queryClient.invalidateQueries({ queryKey: ["analysis"] })
       ]);
     } catch (error: any) {

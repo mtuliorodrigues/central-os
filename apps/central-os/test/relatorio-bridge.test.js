@@ -30,6 +30,7 @@ const {
   normalizeConnectionState,
   getRelatorioConfig,
   listSpreadsheets,
+  saveSpreadsheetFile,
   executeReport,
   getRelatorioStatus,
   independentListenerProcesses,
@@ -68,6 +69,14 @@ test("diretório de planilhas portátil é criado dentro da raiz integrada", asy
   assert.ok(Array.isArray(sheets));
   assert.ok(bridgePaths.spreadsheetsDir.startsWith(bridgePaths.root));
   assert.equal(path.basename(bridgePaths.spreadsheetsDir), "planilhas");
+});
+
+test("salva a planilha importada no diretório usado pelo motor Python", async () => {
+  await saveSpreadsheetFile("upload-test.csv", Buffer.from("Cliente;ID\nTeste;123\n", "utf8"));
+  const sheets = await listSpreadsheets();
+  assert.equal(sheets[0].name, "upload-test.csv");
+  assert.equal(sheets[0].size, Buffer.byteLength("Cliente;ID\nTeste;123\n"));
+  await fs.rm(path.join(bridgePaths.spreadsheetsDir, "upload-test.csv"), { force: true });
 });
 
 test("execução web nasce bloqueada por segurança", async () => {

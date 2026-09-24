@@ -49,6 +49,36 @@ class MatchingSafetyTest(unittest.TestCase):
 
         self.assertEqual(result["MatchStatus"], "ENCONTRADA")
 
+    def test_infra_is_excluded_from_operational_selection(self):
+        row = {**self.row, "Tipo": "INFRA"}
+        self.assertEqual(motor.exclusion_reason(pd.Series(row)), "INFRA")
+
+    def test_infra_normalization_accepts_case_and_spaces(self):
+        for value in ("infra", "  InFrA  "):
+            self.assertEqual(motor.exclusion_reason(pd.Series({**self.row, "Tipo": value})), "INFRA")
+
+    def test_infra_like_terms_are_not_excluded(self):
+        for value in ("INFRAESTRUTURA", "Falha de infra no local"):
+            self.assertNotEqual(motor.exclusion_reason(pd.Series({**self.row, "Tipo": value})), "INFRA")
+
+    def test_existing_exclusion_order_is_preserved(self):
+        row = {**self.row, "Tipo": "RETIRADA"}
+        self.assertEqual(motor.exclusion_reason(pd.Series(row)), "RETIRADA")
+
+    def test_twelve_days_is_still_eligible(self):
+        row = {**self.row, "Tipo": "NORMAL", "Criada": "12/09/2026"}
+        self.assertNotEqual(motor.exclusion_reason(pd.Series(row), ref_date=pd.Timestamp("2026-09-24").date()), "MAIS DE 12 DIAS")
+
+    def test_infra_rows_are_removed_before_matching(self):
+        rows = pd.DataFrame([
+            {**self.row, "Tipo": "INFRA"},
+            {**self.row, "OS": "123457", "Tipo": "NORMAL"},
+        ])
+        selected = rows[rows.apply(lambda item: not motor.exclusion_reason(item), axis=1)]
+        result = motor.build_matches(selected, [record("normal", "OS 123457 CLIENTE TESTE")])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["OS"], "123457")
+
 
 class ForwardConfirmationTest(unittest.TestCase):
     @patch.object(motor.requests, "post")
