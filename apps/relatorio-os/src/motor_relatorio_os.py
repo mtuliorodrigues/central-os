@@ -834,8 +834,10 @@ def build_matches(selected: pd.DataFrame, records):
             score, rec, txt, why = best
             gap = score - second
 
-            # Segurança prática: exige combinação forte ou diferença clara.
-            if score >= 70 and (gap >= 8 or score >= 95):
+            # Segurança prática: uma pontuação alta não resolve empate entre
+            # mensagens diferentes. Exige também vantagem clara sobre a
+            # segunda candidata antes de liberar o encaminhamento automático.
+            if score >= 70 and gap >= 8:
                 status = "ENCONTRADA"
                 used.add((rec.get("key") or {}).get("id") or id(rec))
             elif score >= 55:
@@ -901,7 +903,13 @@ def forward_original_record(base, instance, headers, destination, record):
         )
 
     r.raise_for_status()
-    return r.json()
+    result = r.json()
+    sent_key = result.get("key") if isinstance(result, dict) else None
+    if not isinstance(sent_key, dict) or not sent_key.get("id"):
+        raise RuntimeError("A Evolution não confirmou o ID da mensagem encaminhada.")
+    if sent_key.get("remoteJid") != destination:
+        raise RuntimeError("A Evolution confirmou o encaminhamento em um destino diferente.")
+    return result
 
 
 def check_native_forward_endpoint(base, instance, headers):

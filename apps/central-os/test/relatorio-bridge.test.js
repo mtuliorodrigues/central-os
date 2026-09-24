@@ -32,6 +32,7 @@ const {
   listSpreadsheets,
   executeReport,
   getRelatorioStatus,
+  independentListenerProcesses,
   bridgePaths
 } = await import("../src/relatorio-bridge.js");
 
@@ -44,6 +45,14 @@ test("normaliza estados da Evolution sem confundir HTTP com WhatsApp conectado",
   assert.deepEqual(normalizeConnectionState({ state: "connected" }), { state: "connected", connected: true });
   assert.equal(normalizeConnectionState({ instance: { state: "close" } }).connected, false);
   assert.equal(normalizeConnectionState({}).connected, false);
+});
+
+test("conta launcher e processo filho do Python como um único listener", () => {
+  const processes = [
+    { pid: 100, parentPid: 50, command: "python listener.py" },
+    { pid: 101, parentPid: 100, command: "python listener.py" }
+  ];
+  assert.deepEqual(independentListenerProcesses(processes).map(item => item.pid), [100]);
 });
 
 test("configuração ausente é reportada sem inventar grupos", async () => {

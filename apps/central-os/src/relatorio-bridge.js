@@ -148,18 +148,18 @@ async function whatsappHealth() {
 
 async function listListenerProcesses() {
   if (process.platform === "win32") {
-    const ps = "$p=Get-CimInstance Win32_Process | Where-Object { ($_.Name -match '^python(w)?\\.exe$') -and ($_.CommandLine -like '*COMANDO_WHATSAPP_RELATORIO_USUARIOS.py*') }; $p | ForEach-Object { [pscustomobject]@{pid=$_.ProcessId; command=$_.CommandLine} } | ConvertTo-Json -Compress";
+    const ps = "$p=Get-CimInstance Win32_Process | Where-Object { ($_.Name -match '^python(w)?\\.exe$') -and ($_.CommandLine -like '*COMANDO_WHATSAPP_RELATORIO_USUARIOS.py*') }; $p | ForEach-Object { [pscustomobject]@{pid=$_.ProcessId; parentPid=$_.ParentProcessId; command=$_.CommandLine} } | ConvertTo-Json -Compress";
     const result = await commandOk("powershell.exe", ["-NoProfile", "-Command", ps], { maxBuffer: 1024 * 1024 });
     if (!result.ok || !result.stdout) return [];
     try {
       const parsed = JSON.parse(result.stdout);
-      return (Array.isArray(parsed) ? parsed : [parsed]).filter(Boolean);
+      return independentListenerProcesses((Array.isArray(parsed) ? parsed : [parsed]).filter(Boolean));
     } catch { return []; }
   }
-  const result = await commandOk("ps", ["-eo", "pid=,args="], { maxBuffer: 5 * 1024 * 1024 });
+  const result = await commandOk("ps", ["-eo", "pid=,ppid=,args="], { maxBuffer: 5 * 1024 * 1024 });
   if (!result.ok) return [];
-  return result.stdout.split(/\r?\n/)
-    .map(line => { const m = line.trim().match(/^(\d+)\s+(.*)$/); return m ? { pid: Number(m[1]), command: m[2] } : null; })
+  const listeners = result.stdout.split(/\r?\n/)
+    .map(line => { const m = line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/); return m ? { pid: Number(m[1]), parentPid: Number(m[2]), command: m[3] } : null; })
     .filter(Boolean)
     .filter(item => {
       const command = String(item.command || "").trim();
@@ -167,6 +167,12 @@ async function listListenerProcesses() {
       const isPython = /^python(?:w)?(?:\d+(?:\.\d+)*)?$/.test(executable);
       return isPython && command.includes("COMANDO_WHATSAPP_RELATORIO_USUARIOS.py");
     });
+  return independentListenerProcesses(listeners);
+}
+
+export function independentListenerProcesses(processes) {
+  const listenerPids = new Set(processes.map(item => Number(item?.pid)).filter(Number.isFinite));
+  return processes.filter(item => !listenerPids.has(Number(item?.parentPid)));
 }
 
 async function listenerHealth() {
