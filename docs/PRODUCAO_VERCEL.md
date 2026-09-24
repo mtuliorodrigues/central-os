@@ -43,6 +43,8 @@ O `vercel.json` define o install, build, output e fallback SPA. Após o deploy, 
 
 ## Operação integrada
 
+Na primeira abertura, o Chrome pode solicitar permissão para a página acessar a rede local. Essa permissão é necessária porque o frontend HTTPS consulta o runtime em `http://127.0.0.1:8788`. Depois de iniciar a Central OS Local, permita o acesso para que os dados e os healthchecks apareçam no painel.
+
 1. Execute `C:\Central OS\INICIAR_TUDO.bat`.
 2. Confirme `Central OS Local pronta para uso: SIM`.
 3. Abra `https://central-os-lake.vercel.app` no mesmo computador.

@@ -28,15 +28,22 @@ export class ApiError extends Error {
   }
 }
 
+type LocalNetworkRequestInit = RequestInit & {
+  targetAddressSpace?: "local";
+};
+
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_ROOT}${path}`, {
+  const requestInit: LocalNetworkRequestInit = {
     cache: "no-store",
+    ...(APP_MODE === "local-runtime" ? { targetAddressSpace: "local" as const } : {}),
     ...init,
+    signal: init.signal || AbortSignal.timeout(15_000),
     headers: {
       ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...(init.headers || {})
     }
-  });
+  };
+  const response = await fetch(`${API_ROOT}${path}`, requestInit);
   const text = await response.text();
   let payload: any = {};
   if (text) {
