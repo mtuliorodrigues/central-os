@@ -10,6 +10,8 @@ import type {
   OperationalImport,
   OperationalItem,
   OperationalReport,
+  AuditEventsResponse,
+  OperationalMetrics,
   RelatorioConfig,
   RelatorioStatus,
   SpreadsheetInfo,
@@ -120,6 +122,8 @@ export const api = {
     if (!response.ok) throw new ApiError("Relatório indisponível.", response.status);
     const blob = await response.blob(); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = response.headers.get("content-disposition")?.match(/filename="([^"]+)/)?.[1] || "relatorio"; anchor.click(); URL.revokeObjectURL(url);
   },
+  auditEvents: (params: Record<string, string | number | undefined> = {}) => { const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)])); return request<AuditEventsResponse>(`/api/audit-events${query.toString() ? `?${query}` : ""}`); },
+  operationalMetrics: (params: Record<string, string | number | undefined> = {}) => { const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)])); return request<OperationalMetrics>(`/api/metrics/operational${query.toString() ? `?${query}` : ""}`); },
   reportConfig: () => request<RelatorioConfig>("/api/relatorio/config"),
   reportStatus: () => request<RelatorioStatus>("/api/relatorio/status"),
   reportLogs: () => request<{ logs: string[] | string }>("/api/relatorio/logs"),

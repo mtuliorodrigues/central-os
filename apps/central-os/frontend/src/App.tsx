@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AnalysisPage } from "./pages/AnalysisPage";
+import { AuditPage } from "./pages/AuditPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { GroupsPage } from "./pages/GroupsPage";
 import { HistoryPage } from "./pages/HistoryPage";
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/possivelmente-fechadas" element={<AnalysisPage view="closed" />} />
         <Route path="/pendentes" element={<AnalysisPage view="pending" />} />
         <Route path="/historico" element={<HistoryPage />} />
+        <Route path="/auditoria" element={<AuditPage />} />
         <Route path="/grupos" element={<GroupsPage />} />
         <Route path="/configuracoes" element={<SettingsPage />} />
         <Route path="/relatorio" element={<Navigate to="/os-analisadas" replace />} />

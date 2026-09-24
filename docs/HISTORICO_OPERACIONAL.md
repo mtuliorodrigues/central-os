@@ -29,3 +29,11 @@ A tela segue três níveis sob demanda: Importações → Execuções da importa
 Execuções exibem os contadores persistidos pelo Python, os snapshots de origem/destino, itens individuais e relatórios associados. O frontend não recalcula matching, score ou contadores. Relatórios só são carregados ao abrir a execução e o download resolve o arquivo pelo `reportId` dentro do diretório de saída permitido, rejeitando caminhos arbitrários.
 
 O histórico legado continua preservado nos JSONs e não é misturado à lista operacional. A rota visual nova não usa `analysis-history.json`, `current-analysis.json` ou `history-details`; `current-import.json` permanece legado e teve ausência observada em runtime, devendo ser reavaliado antes de qualquer remoção futura.
+
+## Auditoria e métricas (Fase 8)
+
+`audit_events` é a trilha oficial. Os atores são `USER`, `WHATSAPP`, `SYSTEM` e `ADMIN_TOOL`; eventos registrados incluem autenticação, usuários, imports, duplicidade, execuções, relatórios, downloads e mudança de grupos. Metadata é mínima e não recebe senha, token, Authorization, URL de banco, payload Evolution ou mensagem completa.
+
+`GET /api/audit-events` é restrito a `MASTER_ADMIN`, pagina por 25 registros e permite filtrar período, ação, ator, usuário, importação, execução e entidade. A tela `/auditoria` só aparece para MASTER_ADMIN e apresenta labels amigáveis com a ação técnica disponível em segundo nível.
+
+`GET /api/metrics/operational` usa exclusivamente os contadores persistidos em `executions`: `rowsRead`, `excludedCount`, `eligibleCount`, `foundCount`, `reviewCount`, `notFoundCount`, `sentCount`, `skippedCount` e `failureCount`. Também separa estados `running`, `completed`, `completed_with_errors` e `failed`, e agrega `excludedByReason`. Datas são UTC no banco e filtros são exibidos em horário de São Paulo. Nenhum valor é reconstruído no frontend ou a partir de JSON legado.

@@ -153,6 +153,9 @@ export type OperationalExecution = {
 export type OperationalItem = { id: string; rowNumber?: number; osNumber?: string | null; contractId?: string | null; clientName?: string | null; status?: string | null; matchScore?: number | null; matchReasons?: string[]; messageIdSource?: string | null; messageIdDestination?: string | null; failureCode?: string | null; failureMessage?: string | null; reviewRequired?: boolean };
 export type OperationalReport = { id: string; type?: string; storageKey?: string; sha256?: string | null; sizeBytes?: number | null; metadata?: Record<string, unknown>; createdAt?: string };
 export type OperationalImportsResponse = { items: OperationalImport[]; page: number; limit: number; total: number; totalPages: number };
+export type AuditEvent = { id: string; actorType?: string; userId?: string | null; actorName?: string | null; action?: string; entityType?: string | null; entityId?: string | null; executionId?: string | null; importId?: string | null; result?: string; metadata?: Record<string, unknown>; createdAt?: string };
+export type AuditEventsResponse = { items: AuditEvent[]; page: number; limit: number; total: number; totalPages: number };
+export type OperationalMetrics = { summary: Record<string, number>; statusBreakdown: Array<{ status: string; count: number }>; excludedByReason: Array<{ key: string; count: number }>; period: { dateFrom?: string | null; dateTo?: string | null } };
 
 export type RelatorioConfig = {
   configured?: boolean;

@@ -16,6 +16,7 @@ import { NavLink } from "react-router-dom";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/cn";
+import { useAuth } from "../../auth/AuthContext";
 
 const items = [
   { to: "/", label: "Início", icon: Home },
@@ -32,6 +33,7 @@ const items = [
 const STORAGE_PINNED = "central-os.sidebar.pinned";
 
 export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean) => void }) {
+  const auth = useAuth();
   const [pinned, setPinned] = useState(() => localStorage.getItem(STORAGE_PINNED) !== "false");
   const [hovered, setHovered] = useState(false);
   const expanded = pinned || hovered;
@@ -46,6 +48,7 @@ export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean)
     setPinned((value) => !value);
   }
 
+  const visibleItems = auth.user?.role === "MASTER_ADMIN" ? [...items, { to: "/auditoria", label: "Auditoria", icon: History }] : items;
   return (
     <motion.aside
       className={cn("app-sidebar", expanded && "is-expanded", pinned && "is-pinned")}
@@ -73,7 +76,7 @@ export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean)
 
       <div className="sidebar-section-label">MENU</div>
       <nav className="sidebar-nav" aria-label="Navegação principal">
-        {items.slice(0, 7).map(({ to, label, icon: Icon }) => (
+        {visibleItems.slice(0, 7).map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => cn("sidebar-link", isActive && "active")} title={!expanded ? label : undefined}>
             <span className="sidebar-icon"><Icon className="h-[18px] w-[18px]" /></span>
             <span className="sidebar-label">{label}</span>
@@ -83,7 +86,7 @@ export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean)
 
       <div className="sidebar-section-label sidebar-system-label">SISTEMA</div>
       <nav className="sidebar-nav" aria-label="Sistema">
-        {items.slice(7).map(({ to, label, icon: Icon }) => (
+        {visibleItems.slice(7).map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} className={({ isActive }) => cn("sidebar-link", isActive && "active")} title={!expanded ? label : undefined}>
             <span className="sidebar-icon"><Icon className="h-[18px] w-[18px]" /></span>
             <span className="sidebar-label">{label}</span>

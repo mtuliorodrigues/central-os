@@ -43,7 +43,10 @@ import {
   getExecution,
   listExecutionItems,
   listExecutionReports,
-  getReport
+  getReport,
+  recordAuditEvent,
+  listAuditEvents,
+  operationalMetrics
 } from "./operational-history.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -909,6 +912,8 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/grupos/config" && req.method === "POST") {
       const body = await readJsonBody(req, 64 * 1024);
+      const groupAuth = await authenticated(req);
+      const previousGroups = await getRelatorioConfig();
       const groups = await discoverGroupConfiguration();
       const available = new Map(groups.filter(group => group.available && group.jid).map(group => [group.jid, group]));
       const origemJid = String(body?.origemJid || body?.origem?.id || body?.origem?.jid || "").trim();
@@ -921,6 +926,8 @@ const server = http.createServer(async (req, res) => {
         throw error;
       }
       const saved = await saveRelatorioGroups({ origem, destino });
+      const changed = previousGroups.origem?.id !== saved.origem.id || previousGroups.destino?.id !== saved.destino.id;
+      if (changed) await recordAuditEvent({ actorType: "USER", userId: groupAuth?.user?.id || null, actorRef: groupAuth?.user?.id || null, action: "group_configuration_updated", entityType: "group_configuration", entityId: saved.origem.id, metadata: { originName: saved.origem.name, destinationName: saved.destino.name, originJid: saved.origem.id, destinationJid: saved.destino.id } });
       return json(res, 200, { ok: true, ...saved });
     }
 
@@ -958,8 +965,20 @@ const server = http.createServer(async (req, res) => {
       const file = path.resolve(reportRoot, fileName);
       if (!fileName || !file.startsWith(`${reportRoot}${path.sep}`) || !existsSync(file) || !statSync(file).isFile()) return json(res, 404, { error: "Artefato do relatório não está disponível." });
       const body = await readFile(file);
+      const reportAuth = await authenticated(req);
+      await recordAuditEvent({ actorType: "USER", userId: reportAuth?.user?.id || null, actorRef: reportAuth?.user?.id || null, action: "report_downloaded", entityType: "report", entityId: report.id, executionId: report.executionId, metadata: { reportId: report.id, executionId: report.executionId, type: report.type } });
       res.writeHead(200, { "content-type": "application/octet-stream", "content-length": body.length, "content-disposition": `attachment; filename="${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}"` });
       return res.end(body);
+    }
+
+    if (url.pathname === "/api/audit-events" && req.method === "GET") {
+      const auditAuth = requireMasterAdmin(await authenticated(req));
+      void auditAuth;
+      return json(res, 200, await listAuditEvents({ page: url.searchParams.get("page"), limit: url.searchParams.get("limit"), dateFrom: url.searchParams.get("dateFrom") || null, dateTo: url.searchParams.get("dateTo") || null, action: url.searchParams.get("action") || "", actorType: url.searchParams.get("actorType") || "", userId: url.searchParams.get("userId") || "", importId: url.searchParams.get("importId") || "", executionId: url.searchParams.get("executionId") || "", entityType: url.searchParams.get("entityType") || "", entityId: url.searchParams.get("entityId") || "" }));
+    }
+
+    if (url.pathname === "/api/metrics/operational" && req.method === "GET") {
+      return json(res, 200, await operationalMetrics({ dateFrom: url.searchParams.get("dateFrom") || null, dateTo: url.searchParams.get("dateTo") || null, userId: url.searchParams.get("userId") || "", source: url.searchParams.get("source") || "" }));
     }
 
     if (url.pathname.startsWith("/api/historico/") && req.method === "GET") {

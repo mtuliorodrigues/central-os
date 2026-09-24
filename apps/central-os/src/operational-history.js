@@ -68,8 +68,10 @@ export async function createOperationalImport({ id = randomUUID(), userId = null
   try {
     const result = await db.query(`INSERT INTO imports (id, user_id, source, original_file_name, storage_key, sha256, generated_at, generated_at_source, generated_at_confidence, imported_at, row_count, status)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,now(),$10,'received') RETURNING *`, [id, userId, source, originalFileName, storageKey, digest, generatedAt, generatedAtSource, generatedAtConfidence, Math.max(0, Number(rowCount) || 0)]);
-    await db.query("INSERT INTO audit_events (id,user_id,actor_type,actor_ref,source,action,resource_type,resource_id,result,context) VALUES ($1,$2,$3,$4,'central-os-history','import_created','import',$5,'success',$6::jsonb)", [randomUUID(), userId, userId ? "USER" : "SYSTEM", userId, id, JSON.stringify({ source, rowCount: Math.max(0, Number(rowCount) || 0) })]);
     const duplicate = await db.query("SELECT id, imported_at FROM imports WHERE sha256=$1 AND id<>$2 ORDER BY imported_at DESC LIMIT 1", [digest, id]);
+    const importMetadata = { source, originalFileName, rowCount: Math.max(0, Number(rowCount) || 0), generatedAt, ...(duplicate.rows[0] ? { duplicateOf: duplicate.rows[0].id } : {}) };
+    await db.query("INSERT INTO audit_events (id,user_id,actor_type,actor_ref,source,action,resource_type,resource_id,result,context) VALUES ($1,$2,$3,$4,'central-os-history','import_created','import',$5,'success',$6::jsonb)", [randomUUID(), userId, userId ? "USER" : "SYSTEM", userId, id, JSON.stringify(importMetadata)]);
+    if (duplicate.rows[0]) await db.query("INSERT INTO audit_events (id,user_id,actor_type,actor_ref,source,action,resource_type,resource_id,result,context) VALUES ($1,$2,$3,$4,'central-os-history','import_duplicate_detected','import',$5,'info',$6::jsonb)", [randomUUID(), userId, userId ? "USER" : "SYSTEM", userId, id, JSON.stringify({ duplicateOf: duplicate.rows[0].id })]);
     return { import: publicImport(result.rows[0]), duplicateOf: duplicate.rows[0] ? { id: duplicate.rows[0].id, importedAt: duplicate.rows[0].imported_at } : null };
   } finally { if (own) await db.end(); }
 }
@@ -157,3 +159,49 @@ export async function getExecution(id, { pool = null } = {}) { const { db, own }
 export async function listExecutionItems(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT id,row_number AS \"rowNumber\",os_number AS \"osNumber\",contract_id AS \"contractId\",client_name AS \"clientName\",status,match_score AS \"matchScore\",match_reasons AS \"matchReasons\",message_id_source AS \"messageIdSource\",message_id_destination AS \"messageIdDestination\",failure_code AS \"failureCode\",failure_message AS \"failureMessage\",review_required AS \"reviewRequired\" FROM execution_items WHERE execution_id=$1 ORDER BY row_number", [id])).rows; } finally { if (own) await db.end(); } }
 export async function listExecutionReports(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT id,type,storage_key AS \"storageKey\",sha256,size_bytes AS \"sizeBytes\",metadata,created_at AS \"createdAt\" FROM reports WHERE execution_id=$1 ORDER BY created_at", [id])).rows; } finally { if (own) await db.end(); } }
 export async function getReport(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const result = await db.query("SELECT r.id,r.type,r.storage_key AS \"storageKey\",r.sha256,r.size_bytes AS \"sizeBytes\",r.metadata,r.execution_id AS \"executionId\" FROM reports r WHERE r.id=$1", [id]); return result.rows[0] || null; } finally { if (own) await db.end(); } }
+
+export async function recordAuditEvent({ actorType = "SYSTEM", userId = null, actorRef = null, action, entityType = null, entityId = null, executionId = null, importId = null, result = "success", metadata = {}, pool = null } = {}) {
+  const { db, own } = poolOrThrow(pool);
+  try {
+    const safe = metadata && typeof metadata === "object" ? metadata : {};
+    await db.query(`INSERT INTO audit_events (id,user_id,execution_id,actor_type,actor_ref,source,action,resource_type,resource_id,result,context)
+      VALUES ($1,$2,$3,$4,$5,'central-os-audit',$6,$7,$8,$9,$10::jsonb)`, [randomUUID(), userId, executionId, actorType, actorRef, action, entityType, entityId, result, JSON.stringify(safe)]);
+  } finally { if (own) await db.end(); }
+}
+
+function publicAudit(row) {
+  return { id: row.id, actorType: row.actor_type, userId: row.user_id, actorName: row.actor_name || row.actor_username || null, action: row.action, entityType: row.resource_type, entityId: row.resource_id, executionId: row.execution_id, importId: row.import_id || null, result: row.result, metadata: row.context || {}, createdAt: row.created_at };
+}
+
+export async function listAuditEvents({ page = 1, limit = 25, dateFrom = null, dateTo = null, action = "", actorType = "", userId = "", importId = "", executionId = "", entityType = "", entityId = "", pool = null } = {}) {
+  const { db, own } = poolOrThrow(pool);
+  try {
+    const where = []; const values = [];
+    if (dateFrom) { values.push(dateFrom); where.push(`a.timestamp >= $${values.length}::timestamptz`); }
+    if (dateTo) { values.push(`${dateTo}T23:59:59.999Z`); where.push(`a.timestamp <= $${values.length}::timestamptz`); }
+    for (const [value, column] of [[action, "a.action"], [actorType, "a.actor_type"], [userId, "a.user_id"], [executionId, "a.execution_id"], [entityType, "a.resource_type"], [entityId, "a.resource_id"]]) { if (value) { values.push(value); where.push(`${column}=$${values.length}`); } }
+    if (importId) { values.push(importId); where.push(`(a.resource_type='import' AND a.resource_id=$${values.length} OR e.import_id=$${values.length})`); }
+    const condition = where.length ? ` WHERE ${where.join(" AND ")}` : "";
+    const total = await db.query(`SELECT count(*)::int AS total FROM audit_events a${condition}`, values);
+    const safePage = Math.max(1, Number(page) || 1); const safeLimit = Math.min(100, Math.max(1, Number(limit) || 25)); const params = [...values, safeLimit, (safePage - 1) * safeLimit];
+    const rows = await db.query(`SELECT a.id,a.user_id,a.execution_id,a.actor_type,a.action,a.resource_type,a.resource_id,a.result,a.context,a.timestamp AS created_at,u.name AS actor_name,u.username AS actor_username,
+      COALESCE(CASE WHEN a.resource_type='import' THEN a.resource_id ELSE NULL END,e.import_id::text) AS import_id FROM audit_events a LEFT JOIN users u ON u.id=a.user_id LEFT JOIN executions e ON e.id=a.execution_id${condition} ORDER BY a.timestamp DESC LIMIT $${params.length - 1} OFFSET $${params.length}`, params);
+    return { items: rows.rows.map(publicAudit), page: safePage, limit: safeLimit, total: total.rows[0].total, totalPages: Math.max(1, Math.ceil(total.rows[0].total / safeLimit)) };
+  } finally { if (own) await db.end(); }
+}
+
+export async function operationalMetrics({ dateFrom = null, dateTo = null, userId = "", source = "", pool = null } = {}) {
+  const { db, own } = poolOrThrow(pool);
+  try {
+    const where = []; const values = [];
+    if (dateFrom) { values.push(dateFrom); where.push(`e.started_at >= $${values.length}::timestamptz`); }
+    if (dateTo) { values.push(`${dateTo}T23:59:59.999Z`); where.push(`e.started_at <= $${values.length}::timestamptz`); }
+    if (userId) { values.push(userId); where.push(`e.requested_by_user_id=$${values.length}`); }
+    if (source) { values.push(source); where.push(`e.source=$${values.length}`); }
+    const condition = where.length ? ` WHERE ${where.join(" AND ")}` : "";
+    const summary = (await db.query(`SELECT count(*)::int AS executions,COALESCE(sum(rows_read),0)::int AS rows_read,COALESCE(sum(excluded_count),0)::int AS excluded_count,COALESCE(sum(eligible_count),0)::int AS eligible_count,COALESCE(sum(found_count),0)::int AS found_count,COALESCE(sum(review_count),0)::int AS review_count,COALESCE(sum(not_found_count),0)::int AS not_found_count,COALESCE(sum(sent_count),0)::int AS sent_count,COALESCE(sum(skipped_count),0)::int AS skipped_count,COALESCE(sum(failure_count),0)::int AS failure_count FROM executions e${condition}`, values)).rows[0];
+    const breakdown = (await db.query(`SELECT status,count(*)::int AS count FROM executions e${condition} GROUP BY status ORDER BY status`, values)).rows;
+    const reasons = (await db.query(`SELECT reason.key, sum(reason.value::int)::int AS count FROM executions e CROSS JOIN LATERAL jsonb_each_text(e.excluded_by_reason) reason${condition} GROUP BY reason.key ORDER BY count DESC`, values)).rows;
+    return { summary: { executions: summary.executions, rowsRead: summary.rows_read, excludedCount: summary.excluded_count, eligibleCount: summary.eligible_count, foundCount: summary.found_count, reviewCount: summary.review_count, notFoundCount: summary.not_found_count, sentCount: summary.sent_count, skippedCount: summary.skipped_count, failureCount: summary.failure_count }, statusBreakdown: breakdown, excludedByReason: reasons, period: { dateFrom, dateTo } };
+  } finally { if (own) await db.end(); }
+}
