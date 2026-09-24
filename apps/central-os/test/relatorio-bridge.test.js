@@ -34,6 +34,8 @@ const {
   executeReport,
   getRelatorioStatus,
   independentListenerProcesses,
+  isListenerProcess,
+  listenerStatusFromProcesses,
   bridgePaths
 } = await import("../src/relatorio-bridge.js");
 
@@ -50,10 +52,19 @@ test("normaliza estados da Evolution sem confundir HTTP com WhatsApp conectado",
 
 test("conta launcher e processo filho do Python como um único listener", () => {
   const processes = [
-    { pid: 100, parentPid: 50, command: "python listener.py" },
-    { pid: 101, parentPid: 100, command: "python listener.py" }
+    { pid: 100, parentPid: 50, command: "C:\\Central OS\\apps\\relatorio-os\\.venv\\Scripts\\python.exe -u C:\\Central OS\\apps\\relatorio-os\\src\\COMANDO_WHATSAPP_RELATORIO_USUARIOS.py" },
+    { pid: 101, parentPid: 100, command: '"C:\\Central OS\\apps\\relatorio-os\\.venv\\Scripts\\python.exe" -u "C:\\Central OS\\apps\\relatorio-os\\src\\COMANDO_WHATSAPP_RELATORIO_USUARIOS.py"' }
   ];
   assert.deepEqual(independentListenerProcesses(processes).map(item => item.pid), [100]);
+  assert.deepEqual(listenerStatusFromProcesses(processes), { ok: true, running: true, count: 1, integrated: false, pid: 100, detail: "Listener ativo; processo externo ao worker integrado" });
+});
+
+test("detecta listener simples, caminhos relativos e ignora Python não relacionado", () => {
+  const listener = { pid: 200, parentPid: 1, command: "python.exe -u src\\COMANDO_WHATSAPP_RELATORIO_USUARIOS.py" };
+  assert.equal(isListenerProcess(listener), true);
+  assert.equal(listenerStatusFromProcesses([listener]).count, 1);
+  assert.equal(isListenerProcess({ pid: 201, parentPid: 1, command: "python.exe worker.py" }), false);
+  assert.deepEqual(listenerStatusFromProcesses([]), { ok: false, running: false, count: 0, integrated: false, pid: null, detail: "Listener não encontrado" });
 });
 
 test("configuração ausente é reportada sem inventar grupos", async () => {

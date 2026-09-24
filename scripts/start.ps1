@@ -107,7 +107,7 @@ if(-not $existing){
   $np=Start-Process -FilePath 'node.exe' -ArgumentList @('src/server.js') -WorkingDirectory $Central -RedirectStandardOutput $nodeOut -RedirectStandardError $nodeErr -PassThru -WindowStyle Hidden
   Start-Sleep -Seconds 3;if($np.HasExited){throw "Central OS encerrou. Veja $nodeErr"};Log "[OK] Central OS iniciada. PID=$($np.Id)."
 }else{Log '[OK] Central OS Local ja estava ativa.'}
-Wait-Until { try { $x=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/resumo" -TimeoutSec 3; return $null -ne $x } catch { return $false } } 30 'API Central OS funcional'|Out-Null
+Wait-Until { try { $x=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/health" -TimeoutSec 3; return ($x.ok -eq $true -and $x.service -eq 'central-os-integrada') } catch { return $false } } 30 'API Central OS funcional'|Out-Null
 
 function Get-ListenerRoots {
   $all=@(Get-CimInstance Win32_Process|Where-Object{($_.Name -match '^python(w)?\.exe$') -and ($_.CommandLine -like '*COMANDO_WHATSAPP_RELATORIO_USUARIOS.py*')})

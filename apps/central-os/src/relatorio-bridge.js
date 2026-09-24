@@ -162,14 +162,52 @@ async function whatsappHealth() {
   } finally { clearTimeout(timer); }
 }
 
+const listenerScriptName = "COMANDO_WHATSAPP_RELATORIO_USUARIOS.py";
+
+function commandExecutable(command) {
+  const first = String(command || "").trim().match(/^(?:"([^"]+)"|'([^']+)'|([^\s]+))/);
+  return path.basename(String(first?.[1] || first?.[2] || first?.[3] || "").replaceAll("\\", "/")).toLowerCase();
+}
+
+export function isListenerProcess(process) {
+  const command = String(process?.command || "");
+  const executable = commandExecutable(command);
+  const isPython = /^python(?:w)?(?:\d+(?:\.\d+)*)?(?:\.exe)?$/.test(executable)
+    || /(?:^|[\\\\/"'\\s])python(?:w)?(?:\d+(?:\.\d+)*)?\.exe(?:["'\s]|$)/i.test(command)
+    || /(?:^|["'\s])python(?:w)?(?:\d+(?:\.\d+)*)?(?:["'\s]|$)/i.test(command);
+  return isPython && new RegExp(`(?:^|[\\\\/"'\\s])${listenerScriptName.replace(".", "\\.")}(?:["'\\s]|$)`, "i").test(command);
+}
+
+export function independentListenerProcesses(processes) {
+  const candidates = processes.filter(isListenerProcess);
+  const listenerPids = new Set(candidates.map(item => Number(item?.pid)).filter(Number.isFinite));
+  const roots = candidates.filter(item => !listenerPids.has(Number(item?.parentPid)));
+  return roots.length ? roots : candidates.slice(0, 1);
+}
+
+export function listenerStatusFromProcesses(processes) {
+  const logical = independentListenerProcesses(processes);
+  const running = logical.length > 0;
+  return {
+    ok: running,
+    running,
+    count: logical.length,
+    // A process discovered through the OS is external to the Python worker.
+    // `integrated=true` is reserved for the worker health endpoint below.
+    integrated: false,
+    pid: logical[0]?.pid || null,
+    detail: !running ? "Listener não encontrado" : logical.length === 1 ? "Listener ativo; processo externo ao worker integrado" : "Mais de um listener independente detectado"
+  };
+}
+
 async function listListenerProcesses() {
   if (process.platform === "win32") {
-    const ps = "$p=Get-CimInstance Win32_Process | Where-Object { ($_.Name -match '^python(w)?\\.exe$') -and ($_.CommandLine -like '*COMANDO_WHATSAPP_RELATORIO_USUARIOS.py*') }; $p | ForEach-Object { [pscustomobject]@{pid=$_.ProcessId; parentPid=$_.ParentProcessId; command=$_.CommandLine} } | ConvertTo-Json -Compress";
+    const ps = "$p=Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match '(?i)COMANDO_WHATSAPP_RELATORIO_USUARIOS\\.py' }; $p | ForEach-Object { [pscustomobject]@{pid=$_.ProcessId; parentPid=$_.ParentProcessId; command=$_.CommandLine} } | ConvertTo-Json -Compress";
     const result = await commandOk("powershell.exe", ["-NoProfile", "-Command", ps], { maxBuffer: 1024 * 1024 });
     if (!result.ok || !result.stdout) return [];
     try {
       const parsed = JSON.parse(result.stdout);
-      return independentListenerProcesses((Array.isArray(parsed) ? parsed : [parsed]).filter(Boolean));
+      return (Array.isArray(parsed) ? parsed : [parsed]).filter(Boolean);
     } catch { return []; }
   }
   const result = await commandOk("ps", ["-eo", "pid=,ppid=,args="], { maxBuffer: 5 * 1024 * 1024 });
@@ -177,18 +215,8 @@ async function listListenerProcesses() {
   const listeners = result.stdout.split(/\r?\n/)
     .map(line => { const m = line.trim().match(/^(\d+)\s+(\d+)\s+(.*)$/); return m ? { pid: Number(m[1]), parentPid: Number(m[2]), command: m[3] } : null; })
     .filter(Boolean)
-    .filter(item => {
-      const command = String(item.command || "").trim();
-      const executable = path.basename(command.split(/\s+/)[0] || "").toLowerCase();
-      const isPython = /^python(?:w)?(?:\d+(?:\.\d+)*)?$/.test(executable);
-      return isPython && command.includes("COMANDO_WHATSAPP_RELATORIO_USUARIOS.py");
-    });
-  return independentListenerProcesses(listeners);
-}
-
-export function independentListenerProcesses(processes) {
-  const listenerPids = new Set(processes.map(item => Number(item?.pid)).filter(Number.isFinite));
-  return processes.filter(item => !listenerPids.has(Number(item?.parentPid)));
+      .filter(isListenerProcess);
+  return listeners;
 }
 
 async function listenerHealth() {
@@ -212,16 +240,7 @@ async function listenerHealth() {
       return { ok: false, running: false, count: 0, integrated: false, pid: null, detail: error?.message || String(error) };
     } finally { clearTimeout(timer); }
   }
-  const processes = await listListenerProcesses();
-  const integrated = processes.filter(p => String(p.command || "").toLowerCase().includes(reportSrc.toLowerCase()));
-  return {
-    ok: processes.length === 1,
-    running: processes.length > 0,
-    count: processes.length,
-    integrated: integrated.length === 1,
-    pid: processes[0]?.pid || null,
-    detail: processes.length === 0 ? "Listener não encontrado" : processes.length === 1 ? (integrated.length ? "Listener integrado ativo" : "Listener externo/legado ativo; não iniciar outro") : "Mais de um listener detectado"
-  };
+  return listenerStatusFromProcesses(await listListenerProcesses());
 }
 
 async function newestFile(dir, predicate) {
