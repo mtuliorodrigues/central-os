@@ -1,8 +1,6 @@
 import {
   BarChart3,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   CircleDot,
   Clock3,
   FileSpreadsheet,
@@ -32,32 +30,20 @@ const items = [
 ];
 
 const STORAGE_PINNED = "central-os.sidebar.pinned";
-const STORAGE_COLLAPSED = "central-os.sidebar.collapsed";
 
 export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean) => void }) {
   const [pinned, setPinned] = useState(() => localStorage.getItem(STORAGE_PINNED) !== "false");
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(STORAGE_COLLAPSED) === "true");
   const [hovered, setHovered] = useState(false);
-  const expanded = !collapsed || (!pinned && hovered);
+  const expanded = pinned || hovered;
 
   useEffect(() => {
     localStorage.setItem(STORAGE_PINNED, String(pinned));
-    localStorage.setItem(STORAGE_COLLAPSED, String(collapsed));
-  }, [pinned, collapsed]);
+  }, [pinned]);
 
-  useEffect(() => onWidthChange?.(pinned ? !collapsed : false), [pinned, collapsed, onWidthChange]);
-
-  function toggleCollapsed() {
-    setCollapsed((value) => !value);
-  }
+  useEffect(() => onWidthChange?.(expanded), [expanded, onWidthChange]);
 
   function togglePinned() {
-    setPinned((value) => {
-      const next = !value;
-      if (next) setCollapsed(false);
-      else setCollapsed(true);
-      return next;
-    });
+    setPinned((value) => !value);
   }
 
   return (
@@ -81,15 +67,8 @@ export function Sidebar({ onWidthChange }: { onWidthChange?: (expanded: boolean)
             <button className="sidebar-control" onClick={togglePinned} title={pinned ? "Desafixar menu" : "Fixar menu"} aria-label={pinned ? "Desafixar menu" : "Fixar menu"}>
               {pinned ? <Pin className="h-3.5 w-3.5" /> : <PinOff className="h-3.5 w-3.5" />}
             </button>
-            <button className="sidebar-control" onClick={toggleCollapsed} title="Recolher menu" aria-label="Recolher menu">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
           </div>
-        ) : (
-          <button className="sidebar-control sidebar-expand" onClick={toggleCollapsed} title="Expandir menu" aria-label="Expandir menu">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        )}
+        ) : null}
       </div>
 
       <div className="sidebar-section-label">MENU</div>

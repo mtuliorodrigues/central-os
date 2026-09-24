@@ -20,7 +20,7 @@ Frontend Production: [central-os-lake.vercel.app](https://central-os-lake.vercel
 
 Na fase 1, a aplicação reaproveita a Evolution/PostgreSQL existente. O inicializador pode subir **somente a stack existente** configurada em `EVOLUTION_EXISTING_DIR`; ele não cria outra Evolution, banco ou instância.
 
-A execução real do relatório pelo painel nasce desativada. Depois de validar o baseline real, habilite localmente em `config/app.env`:
+A execução real do relatório pelo painel está habilitada no runtime local após a validação do baseline. A confirmação do usuário continua obrigatória antes de qualquer envio:
 
 ```env
 RELATORIO_ALLOW_WEB_EXECUTION=true

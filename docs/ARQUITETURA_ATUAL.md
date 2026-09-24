@@ -20,7 +20,7 @@ O backend escuta somente em `127.0.0.1:8788`. A Evolution publica somente `127.0
 
 `planilha -> filtros -> matching -> histórico do grupo de origem -> forward nativo -> confirmação do ID de destino -> persistência -> relatório/logs`.
 
-Ambiguidades não são enviadas automaticamente. A execução pelo painel nasce desativada e depende de `RELATORIO_ALLOW_WEB_EXECUTION=true` no arquivo local.
+Ambiguidades não são enviadas automaticamente. A execução pelo painel está habilitada no runtime local e mantém confirmação explícita antes do envio, com `RELATORIO_ALLOW_WEB_EXECUTION=true` no arquivo local ignorado pelo Git.
 
 ## Frontend Production
 
