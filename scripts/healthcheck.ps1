@@ -63,8 +63,8 @@ try {
 } catch {$result.RelatorioConfig=$false}
 try {
   $h=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/health" -TimeoutSec 5
-  $summary=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/resumo" -TimeoutSec 5
-  $result.CentralOS=([bool]$h.ok -and $null -ne $summary)
+  $persistence=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/persistence/health" -TimeoutSec 5
+  $result.CentralOS=([bool]$h.ok -and $h.service -eq 'central-os-integrada' -and [bool]$persistence.ok)
 } catch {$result.CentralOS=$false}
 $result.OK=($result.Docker -and $result.PostgreSQL -and $result.Redis -and $result.Evolution -and $result.EvolutionImage -and $result.WhatsApp -and $result.RelatorioConfig -and $result.Listener -and $result.CentralOS)
 if ($Json) { $result | ConvertTo-Json -Depth 4 } else {

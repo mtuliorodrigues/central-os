@@ -8,9 +8,14 @@ import { fileURLToPath } from "node:url";
 import { readGroupHistoryFromDocker, listWhatsAppGroupsFromDocker } from "./postgres-docker.js";
 import { analyzeSpreadsheetReferences } from "./possibly-closed.js";
 import { parseSpreadsheetBuffer, publicImportSummary } from "./spreadsheet-import.js";
+import { centralDatabaseHealth } from "./db/health.js";
+import { authenticated, bearerToken } from "./auth/middleware.js";
+import { login, logout } from "./auth/service.js";
 import {
   getRelatorioStatus,
   getRelatorioConfig,
+  saveRelatorioGroups,
+  saveSpreadsheetFile,
   getRelatorioLogs,
   listSpreadsheets,
   executeReport
@@ -43,8 +48,6 @@ const contentTypes = {
   ".woff2": "font/woff2"
 };
 
-const primaryGroupJid = process.env.SOURCE_GROUP_JID || "";
-const primaryGroupName = process.env.SOURCE_GROUP_NAME || "TÉC.PLAY";
 const defaultGroupNames = [
   "TÉC.PLAY",
   "ORDEM DE SERVIÇO - PLAY SOLUÇÕES",
@@ -57,15 +60,65 @@ const configuredGroupNames = (process.env.SOURCE_GROUP_NAMES || defaultGroupName
   .map(x => x.trim())
   .filter(Boolean);
 
-function cors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+const importantGroupNames = [
+  "TechPlay",
+  "Rede Play",
+  "ORDEM DE SERVIÇO - PLAY SOLUÇÕES",
+  "OS Diário",
+  "Administrativo Soluções"
+];
+
+let evolutionGroupsCache = { at: 0, groups: null, error: null, pending: null };
+
+const allowedOrigins = new Set(
+  String(process.env.CENTRAL_OS_ALLOWED_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173,https://central-os-lake.vercel.app")
+    .split(",").map(origin => origin.trim()).filter(Boolean)
+);
+
+function cors(req, res) {
+  const origin = String(req.headers.origin || "");
+  if (origin && allowedOrigins.has(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Private-Network", "true");
 }
 
+const loginAttempts = new Map();
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_FAILURES = 5;
+
+function requestIp(req) {
+  return String(req.socket?.remoteAddress || "local").slice(0, 100);
+}
+
+function rateLimitKey(req, username) {
+  return `${requestIp(req)}:${String(username || "").trim().toLowerCase().slice(0, 128)}`;
+}
+
+function checkLoginRateLimit(key) {
+  const now = Date.now();
+  const current = loginAttempts.get(key);
+  if (!current || now - current.startedAt >= LOGIN_WINDOW_MS) {
+    loginAttempts.set(key, { startedAt: now, failures: 0 });
+    return;
+  }
+  if (current.failures >= LOGIN_MAX_FAILURES) {
+    throw Object.assign(new Error("Muitas tentativas. Tente novamente mais tarde."), { code: "login_rate_limited", statusCode: 429 });
+  }
+}
+
+function recordLoginFailure(key) {
+  const now = Date.now();
+  const current = loginAttempts.get(key);
+  if (!current || now - current.startedAt >= LOGIN_WINDOW_MS) loginAttempts.set(key, { startedAt: now, failures: 1 });
+  else current.failures += 1;
+}
+
+function clearLoginFailures(key) { loginAttempts.delete(key); }
+
 function json(res, status, data) {
-  cors(res);
+  cors(res.__centralRequest || { headers: {} }, res);
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store"
@@ -295,16 +348,58 @@ async function readHistorySnapshot(importId) {
   return null;
 }
 
+async function fetchEvolutionGroups() {
+  const now = Date.now();
+  if (evolutionGroupsCache.groups && now - evolutionGroupsCache.at < 5 * 60 * 1000) {
+    return evolutionGroupsCache.groups;
+  }
+  if (evolutionGroupsCache.pending) return evolutionGroupsCache.pending;
+
+  const base = String(process.env.EVOLUTION_BASE_URL || "http://127.0.0.1:8080").replace(/\/+$/, "");
+  const instance = process.env.EVOLUTION_INSTANCE || "sgp-whatsapp";
+  const apiKey = process.env.AUTHENTICATION_API_KEY || process.env.EVOLUTION_API_KEY || "";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120_000);
+  evolutionGroupsCache.pending = fetch(`${base}/group/fetchAllGroups/${encodeURIComponent(instance)}?getParticipants=false`, {
+    headers: apiKey ? { apikey: apiKey } : {},
+    signal: controller.signal
+  }).then(async response => {
+    if (!response.ok) throw new Error(`Evolution respondeu HTTP ${response.status} ao listar grupos.`);
+    const payload = await response.json();
+    const rows = Array.isArray(payload) ? payload : payload?.groups || payload?.data || [];
+    return rows.map(group => ({
+      name: group.subject || group.name || group.pushName || "Grupo sem nome",
+      jid: group.id || group.remoteJid || group.jid || null,
+      available: Boolean(group.id || group.remoteJid || group.jid),
+      source: "evolution",
+      size: group.size ?? group.participants?.length ?? null
+    })).filter(group => group.jid && /@g\.us$/.test(group.jid));
+  }).then(groups => {
+    evolutionGroupsCache = { at: Date.now(), groups, error: null, pending: null };
+    return groups;
+  }).catch(error => {
+    evolutionGroupsCache = { ...evolutionGroupsCache, error: error?.message || String(error), pending: null };
+    throw error;
+  }).finally(() => clearTimeout(timer));
+  return evolutionGroupsCache.pending;
+}
+
 async function discoverGroupConfiguration() {
   let available = [];
+  let source = "evolution";
+  let error = null;
   try {
-    available = await listWhatsAppGroupsFromDocker({
-      container: process.env.POSTGRES_CONTAINER || "evolution_postgres",
-      user: process.env.POSTGRES_USER || "evolution",
-      database: process.env.POSTGRES_DB || "evolution"
-    });
-  } catch {
-    available = [];
+    available = await fetchEvolutionGroups();
+  } catch (evolutionError) {
+    error = evolutionError?.message || String(evolutionError);
+    source = "postgres-fallback";
+    try {
+      available = (await listWhatsAppGroupsFromDocker({
+        container: process.env.POSTGRES_CONTAINER || "evolution_postgres",
+        user: process.env.POSTGRES_USER || "evolution",
+        database: process.env.POSTGRES_DB || "evolution"
+      })).map(group => ({ name: group.name || "Grupo sem nome", jid: group.remoteJid, available: true, source }));
+    } catch {}
   }
 
   const byNormalizedName = new Map();
@@ -313,32 +408,44 @@ async function discoverGroupConfiguration() {
     if (normalized && !byNormalizedName.has(normalized)) byNormalizedName.set(normalized, group);
   }
 
-  const result = [];
-  const seenJids = new Set();
-  const primary = available.find(group => group.remoteJid === primaryGroupJid);
-
-  result.push({
-    name: primary?.name || primaryGroupName,
-    jid: primaryGroupJid,
-    available: Boolean(primary || primaryGroupJid)
-  });
-  seenJids.add(primaryGroupJid);
-
-  for (const wanted of configuredGroupNames) {
-    const match = byNormalizedName.get(normalizeName(wanted));
-    if (match?.remoteJid && !seenJids.has(match.remoteJid)) {
-      result.push({ name: match.name || wanted, jid: match.remoteJid, available: true });
-      seenJids.add(match.remoteJid);
-    } else if (normalizeName(wanted) !== normalizeName(primaryGroupName)) {
-      result.push({ name: wanted, jid: null, available: false });
+  const result = available.map(group => ({ ...group, reason: null }));
+  const seenJids = new Set(result.map(group => group.jid));
+  const configured = await getRelatorioConfig();
+  const selected = [configured.origem, configured.destino].filter(Boolean);
+  for (const group of selected) {
+    if (group.id && !seenJids.has(group.id)) {
+      result.push({ name: group.name || group.id, jid: group.id, available: false, source: "configured", reason: "Configurado localmente, mas não retornado pela Evolution." });
+      seenJids.add(group.id);
     }
   }
 
-  return result;
+  for (const wanted of importantGroupNames) {
+    const aliases = wanted === "TechPlay" ? ["TechPlay", "TÉC.PLAY"]
+      : wanted === "OS Diário" ? ["OS Diário", "O.S DIARIA", "O.S DIÁRIO"]
+      : wanted === "Administrativo Soluções" ? ["Administrativo Soluções", "ADMINISTRATIVO - PLAY SOLUÇÕES"]
+      : [wanted];
+    const match = aliases.map(normalizeName).map(name => byNormalizedName.get(name)).find(Boolean);
+    if (match?.jid) {
+      if (!result.some(group => group.jid === match.jid)) result.push({ ...match, reason: null });
+    } else if (!result.some(group => normalizeName(group.name) === normalizeName(wanted))) {
+      result.push({ name: wanted, jid: null, available: false, source, reason: error || "Não retornado pela Evolution para esta instância." });
+    }
+  }
+
+  return result.sort((a, b) => String(a.name).localeCompare(String(b.name), "pt-BR"));
+}
+
+async function analysisGroups() {
+  const available = await discoverGroupConfiguration();
+  const configured = await getRelatorioConfig();
+  const selectedOrigin = configured.origem?.id;
+  const names = new Set(configuredGroupNames.map(normalizeName));
+  if (configured.origem?.name) names.add(normalizeName(configured.origem.name));
+  return available.filter(group => group.available && group.jid && (group.jid === selectedOrigin || names.has(normalizeName(group.name))));
 }
 
 async function readMessages(days = 30) {
-  const configured = await discoverGroupConfiguration();
+  const configured = await analysisGroups();
   const groups = configured.filter(group => group.available && group.jid);
   const sinceUnix = Math.floor(Date.now() / 1000) - days * 86400;
 
@@ -564,13 +671,52 @@ const staticFiles = new Map([
 
 const server = http.createServer(async (req, res) => {
   try {
+    res.__centralRequest = req;
     if (req.method === "OPTIONS") {
-      cors(res);
+      cors(req, res);
       res.writeHead(204);
       return res.end();
     }
 
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
+
+    if (url.pathname === "/api/auth/login" && req.method === "POST") {
+      const body = await readJsonBody(req, 32 * 1024);
+      const username = String(body?.username || "").trim();
+      const key = rateLimitKey(req, username);
+      checkLoginRateLimit(key);
+      try {
+        const result = await login({
+          username,
+          password: body?.password,
+          metadata: { ip: requestIp(req), userAgent: req.headers["user-agent"] }
+        });
+        clearLoginFailures(key);
+        return json(res, 200, result);
+      } catch (error) {
+        if (error?.code === "invalid_credentials") recordLoginFailure(key);
+        throw error;
+      }
+    }
+
+    if (url.pathname === "/api/auth/me" && req.method === "GET") {
+      const auth = await authenticated(req);
+      if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+      return json(res, 200, { user: auth.user, expiresAt: auth.expiresAt });
+    }
+
+    if (url.pathname === "/api/auth/logout" && req.method === "POST") {
+      const auth = await authenticated(req);
+      if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+      await logout(bearerToken(req));
+      return json(res, 200, { ok: true });
+    }
+
+    const publicApi = (url.pathname === "/api/health" || url.pathname === "/api/persistence/health") && req.method === "GET";
+    if (url.pathname.startsWith("/api/") && !publicApi) {
+      const auth = await authenticated(req);
+      if (!auth) throw Object.assign(new Error("Autenticação necessária."), { code: "unauthorized", statusCode: 401 });
+    }
 
     if (url.pathname === "/api/relatorio/status" && req.method === "GET") {
       return json(res, 200, await getRelatorioStatus());
@@ -594,13 +740,29 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/health" && req.method === "GET") {
+      const persistence = await centralDatabaseHealth();
+      const healthAuth = bearerToken(req) ? await authenticated(req) : null;
+      if (!healthAuth) {
+        return json(res, 200, {
+          ok: persistence.ok,
+          service: "central-os-integrada",
+          checkedAt: new Date().toISOString(),
+          persistence: { ok: persistence.ok, configured: persistence.configured }
+        });
+      }
       const relatorio = await getRelatorioStatus();
       return json(res, 200, {
         ok: true,
         service: "central-os-integrada",
         checkedAt: new Date().toISOString(),
-        relatorio
+        relatorio,
+        persistence
       });
+    }
+
+    if (url.pathname === "/api/persistence/health" && req.method === "GET") {
+      const health = await centralDatabaseHealth();
+      return json(res, 200, { ok: health.ok, configured: health.configured });
     }
 
     if (url.pathname === "/api/planilha/status" && req.method === "GET") {
@@ -623,6 +785,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const parsed = await parseSpreadsheetBuffer(buffer, fileName);
+      await saveSpreadsheetFile(fileName, buffer);
       const saved = await saveImport(parsed);
       return json(res, 200, {
         ok: true,
@@ -640,7 +803,29 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/grupos" && req.method === "GET") {
-      return json(res, 200, { groups: await discoverGroupConfiguration() });
+      const groups = await discoverGroupConfiguration();
+      return json(res, 200, {
+        groups,
+        source: groups.some(group => group.source === "evolution") ? "evolution" : "postgres-fallback",
+        fetchedAt: new Date().toISOString()
+      });
+    }
+
+    if (url.pathname === "/api/grupos/config" && req.method === "POST") {
+      const body = await readJsonBody(req, 64 * 1024);
+      const groups = await discoverGroupConfiguration();
+      const available = new Map(groups.filter(group => group.available && group.jid).map(group => [group.jid, group]));
+      const origemJid = String(body?.origemJid || body?.origem?.id || body?.origem?.jid || "").trim();
+      const destinoJid = String(body?.destinoJid || body?.destino?.id || body?.destino?.jid || "").trim();
+      const origem = available.get(origemJid);
+      const destino = available.get(destinoJid);
+      if (!origem || !destino) {
+        const error = new Error("Selecione grupos que estejam disponíveis na Evolution.");
+        error.statusCode = 400;
+        throw error;
+      }
+      const saved = await saveRelatorioGroups({ origem, destino });
+      return json(res, 200, { ok: true, ...saved });
     }
 
     if (url.pathname === "/api/historico" && req.method === "GET") {

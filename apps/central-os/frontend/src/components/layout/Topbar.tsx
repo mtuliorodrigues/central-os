@@ -1,8 +1,9 @@
-import { Search } from "lucide-react";
+import { LogOut, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { NotificationCenter } from "./NotificationCenter";
 import { SystemStatusButton } from "./SystemStatusButton";
+import { useAuth } from "../../auth/AuthContext";
 
 const destinations = [
   ["Início", "/"],
@@ -18,6 +19,7 @@ const destinations = [
 ] as const;
 
 export function Topbar() {
+  const auth = useAuth();
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [query, setQuery] = useState("");
@@ -62,6 +64,10 @@ export function Topbar() {
       <div className="topbar-actions">
         <NotificationCenter />
         <SystemStatusButton />
+        <div className="topbar-user">
+          <div className="topbar-user-copy"><strong>{auth.user?.name}</strong><span>{auth.user?.role}</span></div>
+          <button className="topbar-icon-button" type="button" onClick={() => void auth.logout()} aria-label="Sair" title="Sair"><LogOut size={17} /></button>
+        </div>
       </div>
     </header>
   );

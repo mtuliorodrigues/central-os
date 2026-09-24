@@ -1,6 +1,7 @@
 import type {
   AnalysisResponse,
   GroupInfo,
+  GroupsResponse,
   HealthResponse,
   HistoryEntry,
   ImportSummary,
@@ -28,11 +29,15 @@ export class ApiError extends Error {
   }
 }
 
+let unauthorizedHandler: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) { unauthorizedHandler = handler; }
+
 type LocalNetworkRequestInit = RequestInit & {
   targetAddressSpace?: "local";
 };
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const token = sessionStorage.getItem("central_os_session_token");
   const requestInit: LocalNetworkRequestInit = {
     cache: "no-store",
     ...(APP_MODE === "local-runtime" ? { targetAddressSpace: "local" as const } : {}),
@@ -40,10 +45,16 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     signal: init.signal || AbortSignal.timeout(15_000),
     headers: {
       ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init.headers || {})
     }
   };
-  const response = await fetch(`${API_ROOT}${path}`, requestInit);
+  let response: Response;
+  try {
+    response = await fetch(`${API_ROOT}${path}`, requestInit);
+  } catch (error) {
+    throw new ApiError(error instanceof Error ? error.message : "Backend local indisponível.", 0, "backend_unavailable");
+  }
   const text = await response.text();
   let payload: any = {};
   if (text) {
@@ -51,23 +62,32 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     catch { payload = { error: text }; }
   }
   if (!response.ok) {
+    if (response.status === 401 && !path.startsWith("/api/auth/login")) unauthorizedHandler?.();
     throw new ApiError(payload?.error || `Falha HTTP ${response.status}`, response.status, payload?.code);
   }
   return payload as T;
 }
 
 export const api = {
+  login: (username: string, password: string) => request<{ token: string; expiresAt: string; user: import("./types").AuthUser }>("/api/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
+  me: () => request<{ user: import("./types").AuthUser; expiresAt: string }>("/api/auth/me"),
+  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   summary: () => request<SummaryResponse>("/api/resumo"),
   importStatus: () => request<ImportSummary>("/api/planilha/status"),
   importSpreadsheet: (fileName: string, dataBase64: string) =>
     request<ImportSummary & { ok?: boolean; message?: string }>("/api/planilha/importar", {
       method: "POST",
+      signal: AbortSignal.timeout(120_000),
       body: JSON.stringify({ fileName, dataBase64 })
     }),
-  processAnalysis: () => request<AnalysisResponse>("/api/analise/processar", { method: "POST" }),
+  processAnalysis: () => request<AnalysisResponse>("/api/analise/processar", { method: "POST", signal: AbortSignal.timeout(120_000) }),
   analysis: (days: 20 | 30 = 30) => request<AnalysisResponse>(`/api/analise?days=${days}`),
   possiblyClosed: (days: 20 | 30 = 30) => request<AnalysisResponse & { totalPossiblyClosed?: number }>(`/api/possivelmente-fechadas?days=${days}`),
-  groups: () => request<{ groups: GroupInfo[] }>("/api/grupos"),
+  groups: () => request<GroupsResponse>("/api/grupos", { signal: AbortSignal.timeout(130_000) }),
+  saveGroups: (origemJid: string, destinoJid: string) => request<{ ok: boolean; origem: GroupInfo; destino: GroupInfo }>("/api/grupos/config", {
+    method: "POST",
+    body: JSON.stringify({ origemJid, destinoJid })
+  }),
   history: () => request<{ history: HistoryEntry[] }>("/api/historico"),
   historyDetails: (id: string) => request<AnalysisResponse>(`/api/historico/${encodeURIComponent(id)}`),
   reportConfig: () => request<RelatorioConfig>("/api/relatorio/config"),
@@ -76,6 +96,7 @@ export const api = {
   spreadsheets: () => request<{ planilhas: SpreadsheetInfo[] }>("/api/relatorio/planilhas"),
   executeReport: (fileName: string) => request<any>("/api/relatorio/executar", {
     method: "POST",
+    signal: AbortSignal.timeout(30 * 60 * 1000),
     body: JSON.stringify({ fileName })
   }),
   health: () => request<HealthResponse>("/api/health")

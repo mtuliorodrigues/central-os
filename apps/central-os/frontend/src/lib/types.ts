@@ -78,7 +78,16 @@ export type GroupInfo = {
   jid?: string | null;
   id?: string | null;
   available?: boolean;
+  source?: string;
+  reason?: string | null;
+  size?: number | null;
   [key: string]: unknown;
+};
+
+export type GroupsResponse = {
+  groups: GroupInfo[];
+  source?: string;
+  fetchedAt?: string;
 };
 
 export type HistoryEntry = {
@@ -149,6 +158,15 @@ export type HealthResponse = {
   service?: string;
   checkedAt?: string;
   relatorio?: RelatorioStatus;
+  persistence?: { ok?: boolean; configured?: boolean; database?: string | null; detail?: string };
+};
+
+export type AuthUser = {
+  id: string;
+  name: string;
+  username: string;
+  role: "MASTER_ADMIN" | "USER" | string;
+  avatar?: string | null;
 };
 
 export type SpreadsheetInfo = {

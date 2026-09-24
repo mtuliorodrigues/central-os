@@ -7,10 +7,10 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SystemStatusPage } from "./pages/SystemStatusPage";
+import { AuthGate } from "./auth/AuthContext";
 
 export default function App() {
-  return (
-    <Routes>
+  return <AuthGate><Routes>
       <Route path="/status" element={<SystemStatusPage />} />
       <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
@@ -26,6 +26,5 @@ export default function App() {
         <Route path="/importar-planilha" element={<Navigate to="/?import=1" replace />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
-    </Routes>
-  );
+    </Routes></AuthGate>;
 }
