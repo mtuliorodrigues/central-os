@@ -10,6 +10,7 @@ import type {
   SpreadsheetInfo,
   SummaryResponse
 } from "./types";
+import { targetAddressSpaceFor } from "./network";
 
 export type AppMode = "integrated" | "local-runtime";
 
@@ -38,9 +39,10 @@ type LocalNetworkRequestInit = RequestInit & {
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = sessionStorage.getItem("central_os_session_token");
+  const targetAddressSpace = APP_MODE === "local-runtime" ? targetAddressSpaceFor(`${API_ROOT}${path}`) : undefined;
   const requestInit: LocalNetworkRequestInit = {
     cache: "no-store",
-    ...(APP_MODE === "local-runtime" ? { targetAddressSpace: "local" as const } : {}),
+    ...(targetAddressSpace ? { targetAddressSpace } : {}),
     ...init,
     signal: init.signal || AbortSignal.timeout(15_000),
     headers: {
