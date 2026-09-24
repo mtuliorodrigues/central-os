@@ -345,7 +345,7 @@ async function acquireLock(fileName) {
 
 async function releaseLock() { await fs.rm(lockFile, { force: true }).catch(() => {}); }
 
-export async function executeReport({ fileName } = {}) {
+export async function executeReport({ fileName, importId = null, executionId = null, source = "ui" } = {}) {
   if (!boolEnv("RELATORIO_ALLOW_WEB_EXECUTION", false)) {
     throw Object.assign(new Error("Execução pelo painel está desativada. Ative RELATORIO_ALLOW_WEB_EXECUTION=true após validar o baseline manual."), { statusCode: 403, code: "web_execution_disabled" });
   }
@@ -375,7 +375,7 @@ export async function executeReport({ fileName } = {}) {
           method: "POST",
           signal: controller.signal,
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ fileName: path.basename(selected), grupoOrigem: config.origem.id, grupoDestino: config.destino.id })
+          body: JSON.stringify({ fileName: path.basename(selected), grupoOrigem: config.origem.id, grupoDestino: config.destino.id, executionId, importId, source })
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || payload?.ok === false) {
@@ -383,10 +383,14 @@ export async function executeReport({ fileName } = {}) {
           error.statusCode = response.status >= 400 ? response.status : 500;
           throw error;
         }
-        result = { stdout: payload?.stdout || "", stderr: payload?.stderr || "" };
+        result = { stdout: payload?.stdout || "", stderr: payload?.stderr || "", contract: payload?.contract || null };
       } finally { clearTimeout(timer); }
     } else {
-      result = await execFileAsync(pythonExecutable(), [motor, selected, "--grupo-origem", config.origem.id, "--grupo-destino", config.destino.id, "--saida", outputDir, "--executar"], {
+      const args = [motor, selected, "--grupo-origem", config.origem.id, "--grupo-destino", config.destino.id, "--saida", outputDir, "--executar"];
+      if (executionId) args.push("--execution-id", executionId);
+      if (importId) args.push("--import-id", importId);
+      if (source) args.push("--source", source);
+      result = await execFileAsync(pythonExecutable(), args, {
         cwd: reportSrc,
         env,
         timeout: 30 * 60 * 1000,
@@ -394,12 +398,18 @@ export async function executeReport({ fileName } = {}) {
         windowsHide: true
       });
     }
+    const contractPath = executionId ? path.join(outputDir, `execution_result_${executionId}.json`) : null;
+    let contract = null;
+    if (contractPath && await exists(contractPath)) {
+      try { contract = JSON.parse(await fs.readFile(contractPath, "utf8")); } catch (error) { throw new Error(`Contrato operacional inválido: ${error.message}`); }
+    }
+    if (executionId && !contract) throw new Error("O motor Python não produziu o contrato operacional.");
     const output = `${result.stdout || ""}\n${result.stderr || ""}`;
     const summary = {};
     for (const [key, regex] of Object.entries({ afterFilters: /OS\s+ap[oó]s\s+filtros\s*[:=]\s*(\d+)/i, found: /ENCONTRADAS?(?:\s+NO\s+GRUPO(?:\s+DE\s+ORIGEM)?)?\s*[:=]\s*(\d+)/i, review: /REVISAR\s*[:=]\s*(\d+)/i, notFound: /N[AÃ]O\s+ENCONTRADAS?\s*[:=]\s*(\d+)/i, sent: /ENVIO CONCLU[IÍ]DO\s*\|\s*(\d+) OS enviadas/i })) {
       const match = output.match(regex); if (match) summary[key] = Number(match[1]);
     }
-    return { ok: true, fileName: path.basename(selected), summary, finishedAt: new Date().toISOString(), lastReport: await latestReport() };
+    return { ok: true, fileName: path.basename(selected), summary, finishedAt: new Date().toISOString(), lastReport: await latestReport(), contract };
   } finally { await releaseLock(); }
 }
 

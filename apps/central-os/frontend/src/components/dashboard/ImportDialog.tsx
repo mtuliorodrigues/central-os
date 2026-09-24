@@ -17,6 +17,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
   const [stage, setStage] = useState<"idle" | "reading" | "importing" | "analyzing" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const [processed, setProcessed] = useState<number | null>(null);
+  const [generatedAt, setGeneratedAt] = useState("");
 
   function validate(selected: File) {
     const ext = selected.name.toLowerCase().split(".").pop();
@@ -32,6 +33,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
       setStage("idle");
       setMessage("");
       setProcessed(null);
+      setGeneratedAt("");
     } catch (error: any) {
       setFile(null);
       setStage("error");
@@ -47,7 +49,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
       const dataBase64 = await fileToBase64(file);
       setStage("importing");
       setMessage("Importando a planilha e identificando as ordens…");
-      const imported = await api.importSpreadsheet(file.name, dataBase64);
+      const imported = await api.importSpreadsheet(file.name, dataBase64, generatedAt ? new Date(generatedAt).toISOString() : undefined);
       setStage("analyzing");
       setMessage(`Planilha importada. Processando ${formatNumber(imported.totalOS)} OS…`);
       const analysis = await api.processAnalysis();
@@ -73,6 +75,7 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
     setStage("idle");
     setMessage("");
     setProcessed(null);
+    setGeneratedAt("");
     onClose();
   }
 
@@ -107,6 +110,10 @@ export function ImportDialog({ open, onClose }: { open: boolean; onClose: () => 
           {stage === "error" ? <p className="form-error">{message}</p> : null}
         </div>
       ) : null}
+
+      {file && stage === "idle" ? <label className="import-generated-at">Gerada em (opcional, confirme somente se souber)
+        <input type="datetime-local" value={generatedAt} onChange={(event) => setGeneratedAt(event.target.value)} />
+      </label> : null}
 
       <div className="modal-actions">
         <Button onClick={close} disabled={busy}>{stage === "done" ? "Fechar" : "Cancelar"}</Button>

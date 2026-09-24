@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
 import re
@@ -64,12 +65,9 @@ def sync_log(msg):
                 f.write(line + "\n")
         except Exception:
             pass
-
     try:
         print(line)
     except UnicodeEncodeError:
-        # O arquivo já preservou o texto integral. O fallback evita que a
-        # code page do console interrompa a execução do motor.
         stream = getattr(sys, "stdout", None)
         buffer = getattr(stream, "buffer", None)
         if buffer:
@@ -77,6 +75,74 @@ def sync_log(msg):
             buffer.flush()
 
 
+def _artifact(path, kind):
+    path = Path(path)
+    try:
+        data = path.read_bytes()
+        return {"type": kind, "storageKey": path.name, "sha256": hashlib.sha256(data).hexdigest(), "sizeBytes": len(data), "metadata": {}}
+    except OSError:
+        return None
+
+
+def _contract_item(item, status=None, destination_ids=None):
+    status = status or str(item.get("MatchStatus") or "unknown").lower().replace("nao encontrada", "not_found").replace("encontrada", "found").replace("revisar", "review")
+    if status == "nao encontrada":
+        status = "not_found"
+    reasons = item.get("MatchMotivos") or []
+    if isinstance(reasons, str):
+        reasons = [reasons] if reasons else []
+    return {
+        "rowNumber": int(item.get("rowNumber") or item.get("Linha") or 1),
+        "osNumber": clean(item.get("OS", "")),
+        "contractId": clean(item.get("Contrato", "") or item.get("ID", "")),
+        "clientName": clean(item.get("Cliente", "")),
+        "status": status,
+        "matchScore": float(item.get("MatchScore") or 0),
+        "matchReasons": reasons,
+        "messageIdSource": clean(item.get("MessageId", "")),
+        "messageIdDestination": (destination_ids or {}).get(clean(item.get("OS", "")), ""),
+        "failureCode": clean(item.get("FailureCode", "")),
+        "failureMessage": clean(item.get("FailureMessage", "")),
+        "reviewRequired": status == "review",
+    }
+
+
+def write_execution_contract(out_dir, execution_id, import_id, source, file_name, started_at, finished_at, status, full_rows, excluded_rows, selected_rows, matched_df, artifacts, sent_count=0, failure_count=0, excluded_by_reason=None, error_summary=None, destination_ids=None):
+    if not execution_id:
+        return None
+    items = []
+    for item in excluded_rows:
+        item = dict(item)
+        item["FailureCode"] = item.get("MotivoExclusao", "excluded")
+        items.append(_contract_item(item, "excluded", destination_ids))
+    if matched_df is not None and not matched_df.empty:
+        items.extend(_contract_item(row.to_dict(), destination_ids=destination_ids) for _, row in matched_df.iterrows())
+    contract = {
+        "executionId": execution_id,
+        "importId": import_id,
+        "source": source,
+        "fileName": file_name,
+        "startedAt": started_at,
+        "finishedAt": finished_at,
+        "status": status,
+        "rowsRead": len(full_rows),
+        "excludedCount": len(excluded_rows),
+        "excludedByReason": excluded_by_reason or {},
+        "eligibleCount": len(selected_rows),
+        "foundCount": int((matched_df["MatchStatus"] == "ENCONTRADA").sum()) if matched_df is not None and not matched_df.empty else 0,
+        "reviewCount": int((matched_df["MatchStatus"] == "REVISAR").sum()) if matched_df is not None and not matched_df.empty else 0,
+        "notFoundCount": int((matched_df["MatchStatus"] == "NAO ENCONTRADA").sum()) if matched_df is not None and not matched_df.empty else 0,
+        "sentCount": int(sent_count),
+        "skippedCount": 0,
+        "failureCount": int(failure_count),
+        "items": items,
+        "artifacts": [item for item in artifacts if item],
+        "errorSummary": error_summary or {},
+        "engineVersion": "motor_relatorio_os.py",
+    }
+    target = Path(out_dir) / f"execution_result_{execution_id}.json"
+    target.write_text(json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8")
+    return contract
 
 def norm(v):
     s = "" if v is None else str(v)
@@ -972,7 +1038,11 @@ def main():
     ap.add_argument("--grupo-destino", required=True)
     ap.add_argument("--saida", default="saida")
     ap.add_argument("--executar", action="store_true")
+    ap.add_argument("--execution-id", default="")
+    ap.add_argument("--import-id", default="")
+    ap.add_argument("--source", default="ui")
     args = ap.parse_args()
+    started_at = datetime.now(timezone.utc).isoformat()
 
     inp = Path(args.entrada)
     if not inp.is_absolute():
@@ -1055,6 +1125,10 @@ def main():
     found_count = int((matched_df["MatchStatus"] == "ENCONTRADA").sum()) if not matched_df.empty else 0
     review_count = int((matched_df["MatchStatus"] == "REVISAR").sum()) if not matched_df.empty else 0
     missing_count = int((matched_df["MatchStatus"] == "NAO ENCONTRADA").sum()) if not matched_df.empty else 0
+    excluded_by_reason = {}
+    for item in excluded_rows:
+        reason = clean(item.get("MotivoExclusao", "excluded")) or "excluded"
+        excluded_by_reason[reason] = excluded_by_reason.get(reason, 0) + 1
 
     print()
     print("=== RELATORIO DE OS ===")
@@ -1095,6 +1169,13 @@ def main():
     preview_txt.write_text("\n".join(lines), encoding="utf-8")
 
     if not args.executar:
+        artifacts = [
+            _artifact(preview_csv, "preview"),
+            _artifact(excluded_csv, "excluded"),
+            _artifact(missing_csv, "not_found"),
+            _artifact(preview_txt, "execution")
+        ]
+        write_execution_contract(out_dir, args.execution_id, args.import_id, args.source, inp.name, started_at, datetime.now(timezone.utc).isoformat(), "completed", full, excluded_rows, selected_rows, matched_df, artifacts, excluded_by_reason=excluded_by_reason)
         print("ANALISE CONCLUIDA. NADA FOI ENVIADO.")
         print(f"Previa: {preview_txt}")
         return
@@ -1235,6 +1316,16 @@ def main():
     print()
     print(f"ENVIO CONCLUIDO | {ok} OS enviadas | {err} erro(s)")
     print(f"Log: {log_path}")
+
+    destination_ids = {clean(item.get("OS", "")): clean(item.get("MessageIdDestino", "")) for item in log if item.get("Tipo") == "OS"}
+    artifacts = [
+        _artifact(preview_csv, "preview"),
+        _artifact(excluded_csv, "excluded"),
+        _artifact(missing_csv, "not_found"),
+        _artifact(preview_txt, "execution"),
+        _artifact(log_path, "sent")
+    ]
+    write_execution_contract(out_dir, args.execution_id, args.import_id, args.source, inp.name, started_at, datetime.now(timezone.utc).isoformat(), "completed_with_errors" if err else "completed", full, excluded_rows, selected_rows, matched_df, artifacts, sent_count=ok, failure_count=err, excluded_by_reason=excluded_by_reason, destination_ids=destination_ids)
 
 
 if __name__ == "__main__":

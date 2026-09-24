@@ -2,6 +2,7 @@ import "./integrated-env.js";
 import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,8 +28,22 @@ import {
   saveSpreadsheetFile,
   getRelatorioLogs,
   listSpreadsheets,
-  executeReport
+  executeReport,
+  bridgePaths
 } from "./relatorio-bridge.js";
+import {
+  sha256,
+  createOperationalImport,
+  createOperationalExecution,
+  finalizeOperationalExecution,
+  failOperationalExecution,
+  listImports,
+  getImport,
+  listExecutions,
+  getExecution,
+  listExecutionItems,
+  listExecutionReports
+} from "./operational-history.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
@@ -789,7 +804,28 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/relatorio/executar" && req.method === "POST") {
       const body = await readJsonBody(req, 1024 * 1024);
-      return json(res, 200, await executeReport({ fileName: body?.fileName }));
+      const auth = await authenticated(req);
+      const current = await requireImport();
+      const config = await getRelatorioConfig();
+      const executionId = await createOperationalExecution({
+        importId: current.importId,
+        requestedByUserId: auth?.user?.id || null,
+        source: "ui",
+        fileNameSnapshot: current.fileName,
+        groups: [
+          { role: "origin", jid: config.origem?.id, name: config.origem?.name },
+          { role: "destination", jid: config.destino?.id, name: config.destino?.name }
+        ]
+      });
+      try {
+        const result = await executeReport({ fileName: body?.fileName, importId: current.importId, executionId, source: "ui" });
+        if (!result.contract) throw new Error("O motor Python não produziu o contrato operacional.");
+        const persisted = await finalizeOperationalExecution({ executionId, contract: result.contract, outputDir: bridgePaths.outputDir });
+        return json(res, 200, { ...result, executionId, operational: persisted });
+      } catch (error) {
+        await failOperationalExecution({ executionId, errorSummary: { code: error?.code || "execution_failed", message: String(error?.message || error).slice(0, 500) } });
+        throw error;
+      }
     }
 
     if (url.pathname === "/api/health" && req.method === "GET") {
@@ -838,11 +874,17 @@ const server = http.createServer(async (req, res) => {
       }
 
       const parsed = await parseSpreadsheetBuffer(buffer, fileName);
+      const generatedDate = body?.generatedAt ? new Date(body.generatedAt) : null;
+      if (generatedDate && Number.isNaN(generatedDate.getTime())) throw Object.assign(new Error("A data de geração informada é inválida."), { statusCode: 400, code: "invalid_generated_at" });
       await saveSpreadsheetFile(fileName, buffer);
-      const saved = await saveImport(parsed);
+      const saved = await saveImport({ ...parsed, generatedAt: generatedDate ? generatedDate.toISOString() : null, generatedAtSource: generatedDate ? String(body?.generatedAtSource || "manual") : null, generatedAtConfidence: generatedDate ? String(body?.generatedAtConfidence || "user_confirmed") : null });
+      const auth = await authenticated(req);
+      const operational = await createOperationalImport({ id: saved.importId, userId: auth?.user?.id || null, source: "ui", originalFileName: fileName, storageKey: path.relative(root, path.join(bridgePaths.spreadsheetsDir, fileName)).replaceAll("\\", "/"), sha256: sha256(buffer), generatedAt: saved.generatedAt, generatedAtSource: saved.generatedAtSource, generatedAtConfidence: saved.generatedAtConfidence, rowCount: saved.references?.length || 0 });
       return json(res, 200, {
         ok: true,
         message: "Planilha importada e definida como referência principal das OS.",
+        importId: operational.import.id,
+        duplicateOf: operational.duplicateOf,
         ...publicImportSummary(saved)
       });
     }
@@ -883,6 +925,25 @@ const server = http.createServer(async (req, res) => {
 
     if (url.pathname === "/api/historico" && req.method === "GET") {
       return json(res, 200, { history: await readHistory() });
+    }
+
+    if (url.pathname === "/api/imports" && req.method === "GET") return json(res, 200, { imports: await listImports() });
+    const importMatch = url.pathname.match(/^\/api\/imports\/([^/]+)(?:\/executions)?$/);
+    if (importMatch && req.method === "GET") {
+      const importId = decodeURIComponent(importMatch[1]);
+      if (url.pathname.endsWith("/executions")) return json(res, 200, { executions: await listExecutions(importId) });
+      const found = await getImport(importId);
+      if (!found) return json(res, 404, { error: "Import não encontrado." });
+      return json(res, 200, { import: found, executions: await listExecutions(importId) });
+    }
+    const executionMatch = url.pathname.match(/^\/api\/executions\/([^/]+)(?:\/(items|reports))?$/);
+    if (executionMatch && req.method === "GET") {
+      const executionId = decodeURIComponent(executionMatch[1]);
+      if (executionMatch[2] === "items") return json(res, 200, { items: await listExecutionItems(executionId) });
+      if (executionMatch[2] === "reports") return json(res, 200, { reports: await listExecutionReports(executionId) });
+      const execution = await getExecution(executionId);
+      if (!execution) return json(res, 404, { error: "Execution não encontrada." });
+      return json(res, 200, { execution });
     }
 
     if (url.pathname.startsWith("/api/historico/") && req.method === "GET") {

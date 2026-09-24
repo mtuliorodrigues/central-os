@@ -136,6 +136,12 @@ class Handler(BaseHTTPRequestHandler):
                 "--saida", str(OUTPUT),
                 "--executar",
             ]
+            if data.get("executionId"):
+                cmd.extend(["--execution-id", str(data["executionId"])])
+            if data.get("importId"):
+                cmd.extend(["--import-id", str(data["importId"])])
+            if data.get("source"):
+                cmd.extend(["--source", str(data["source"])])
             try:
                 proc = subprocess.run(
                     cmd, cwd=str(HERE), env=os.environ.copy(),
@@ -149,6 +155,10 @@ class Handler(BaseHTTPRequestHandler):
                 "stdout": (proc.stdout or "")[-5000000:],
                 "stderr": (proc.stderr or "")[-5000000:],
             }
+            if data.get("executionId"):
+                result_file = OUTPUT / f"execution_result_{data['executionId']}.json"
+                if result_file.is_file():
+                    payload["contract"] = json.loads(result_file.read_text(encoding="utf-8"))
             return self.send_json(200 if proc.returncode == 0 else 500, payload)
         except FileNotFoundError as exc:
             return self.send_json(404, {"error": "spreadsheet_not_found", "detail": str(exc)})

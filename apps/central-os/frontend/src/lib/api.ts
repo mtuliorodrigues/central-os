@@ -83,11 +83,11 @@ export const api = {
   adminResetPassword: (id: string, password: string) => request<{ ok: boolean }>(`/api/admin/users/${encodeURIComponent(id)}/reset-password`, { method: "POST", body: JSON.stringify({ password }) }),
   summary: () => request<SummaryResponse>("/api/resumo"),
   importStatus: () => request<ImportSummary>("/api/planilha/status"),
-  importSpreadsheet: (fileName: string, dataBase64: string) =>
+  importSpreadsheet: (fileName: string, dataBase64: string, generatedAt?: string) =>
     request<ImportSummary & { ok?: boolean; message?: string }>("/api/planilha/importar", {
       method: "POST",
       signal: AbortSignal.timeout(120_000),
-      body: JSON.stringify({ fileName, dataBase64 })
+      body: JSON.stringify({ fileName, dataBase64, generatedAt, generatedAtSource: generatedAt ? "manual" : undefined, generatedAtConfidence: generatedAt ? "user_confirmed" : undefined })
     }),
   processAnalysis: () => request<AnalysisResponse>("/api/analise/processar", { method: "POST", signal: AbortSignal.timeout(120_000) }),
   analysis: (days: 20 | 30 = 30) => request<AnalysisResponse>(`/api/analise?days=${days}`),
