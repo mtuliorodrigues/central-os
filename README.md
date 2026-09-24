@@ -1,6 +1,8 @@
-# Central OS Integrada
+# Central OS Local
 
 Integração isolada entre **Central OS (Node.js)** e **Relatório OS (Python)**, preservando os dois motores especializados e reutilizando a infraestrutura Evolution/PostgreSQL/WhatsApp existente.
+
+Frontend Production: [central-os-lake.vercel.app](https://central-os-lake.vercel.app). A interface publicada acessa o runtime local deste computador em `http://127.0.0.1:8788`; para dados e integrações reais, inicie primeiro `INICIAR_TUDO.bat`.
 
 ## Princípios
 
@@ -32,8 +34,9 @@ RELATORIO_ALLOW_WEB_EXECUTION=true
 - `data/` — planilhas/saídas locais (dados reais ignorados pelo Git).
 - `logs/` — logs operacionais.
 - `scripts/` — inicialização, healthcheck, importação segura e captura de baseline.
+- `infra/evolution/` — patch e build reproduzível da imagem Evolution `phase2-fix1`.
 - `docs/` — arquitetura, portabilidade, baseline e relatório da etapa.
 
 ## Validação
 
-Consulte `docs/RELATORIO_IMPLEMENTACAO_ETAPA1.md` para testes aprovados, limitações, rollback e pendências de validação no Windows/WhatsApp real.
+Consulte `docs/ARQUITETURA_ATUAL.md`, `docs/PRODUCAO_VERCEL.md` e `docs/testes/fases/fase-2-relatorio-whatsapp/README.md` para arquitetura, operação, deploy e evidências sanitizadas.
