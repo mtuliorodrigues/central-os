@@ -42,7 +42,8 @@ import {
   listExecutions,
   getExecution,
   listExecutionItems,
-  listExecutionReports
+  listExecutionReports,
+  getReport
 } from "./operational-history.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -927,7 +928,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { history: await readHistory() });
     }
 
-    if (url.pathname === "/api/imports" && req.method === "GET") return json(res, 200, { imports: await listImports() });
+    if (url.pathname === "/api/imports" && req.method === "GET") {
+      return json(res, 200, await listImports({ page: url.searchParams.get("page"), limit: url.searchParams.get("limit"), search: url.searchParams.get("search") || "", importedFrom: url.searchParams.get("importedFrom") || null, importedTo: url.searchParams.get("importedTo") || null, user: url.searchParams.get("user") || "", status: url.searchParams.get("status") || "", source: url.searchParams.get("source") || "" }));
+    }
     const importMatch = url.pathname.match(/^\/api\/imports\/([^/]+)(?:\/executions)?$/);
     if (importMatch && req.method === "GET") {
       const importId = decodeURIComponent(importMatch[1]);
@@ -944,6 +947,19 @@ const server = http.createServer(async (req, res) => {
       const execution = await getExecution(executionId);
       if (!execution) return json(res, 404, { error: "Execution não encontrada." });
       return json(res, 200, { execution });
+    }
+
+    const reportDownloadMatch = url.pathname.match(/^\/api\/reports\/([^/]+)\/download$/);
+    if (reportDownloadMatch && req.method === "GET") {
+      const report = await getReport(decodeURIComponent(reportDownloadMatch[1]));
+      if (!report) return json(res, 404, { error: "Relatório não encontrado." });
+      const reportRoot = path.resolve(bridgePaths.outputDir);
+      const fileName = path.basename(String(report.storageKey || ""));
+      const file = path.resolve(reportRoot, fileName);
+      if (!fileName || !file.startsWith(`${reportRoot}${path.sep}`) || !existsSync(file) || !statSync(file).isFile()) return json(res, 404, { error: "Artefato do relatório não está disponível." });
+      const body = await readFile(file);
+      res.writeHead(200, { "content-type": "application/octet-stream", "content-length": body.length, "content-disposition": `attachment; filename="${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}"` });
+      return res.end(body);
     }
 
     if (url.pathname.startsWith("/api/historico/") && req.method === "GET") {

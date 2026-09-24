@@ -105,6 +105,55 @@ export type HistoryEntry = {
   groups?: string[];
 };
 
+export type OperationalImport = {
+  id: string;
+  userId?: string | null;
+  userName?: string | null;
+  userUsername?: string | null;
+  source?: string | null;
+  originalFileName?: string | null;
+  storageKey?: string | null;
+  sha256?: string | null;
+  generatedAt?: string | null;
+  generatedAtSource?: string | null;
+  generatedAtConfidence?: string | null;
+  importedAt?: string | null;
+  rowCount?: number;
+  status?: string | null;
+  executionCount?: number;
+  duplicate?: boolean;
+};
+
+export type OperationalGroup = { role?: string; name?: string | null; jid?: string | null };
+export type OperationalExecution = {
+  id: string;
+  importId?: string;
+  requestedByUserId?: string | null;
+  userName?: string | null;
+  userUsername?: string | null;
+  source?: string | null;
+  fileNameSnapshot?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  status?: string | null;
+  rowsRead?: number;
+  excludedCount?: number;
+  eligibleCount?: number;
+  foundCount?: number;
+  reviewCount?: number;
+  notFoundCount?: number;
+  sentCount?: number;
+  skippedCount?: number;
+  failureCount?: number;
+  excludedByReason?: Record<string, number>;
+  errorSummary?: Record<string, unknown>;
+  engineVersion?: string | null;
+  groups?: OperationalGroup[];
+};
+export type OperationalItem = { id: string; rowNumber?: number; osNumber?: string | null; contractId?: string | null; clientName?: string | null; status?: string | null; matchScore?: number | null; matchReasons?: string[]; messageIdSource?: string | null; messageIdDestination?: string | null; failureCode?: string | null; failureMessage?: string | null; reviewRequired?: boolean };
+export type OperationalReport = { id: string; type?: string; storageKey?: string; sha256?: string | null; sizeBytes?: number | null; metadata?: Record<string, unknown>; createdAt?: string };
+export type OperationalImportsResponse = { items: OperationalImport[]; page: number; limit: number; total: number; totalPages: number };
+
 export type RelatorioConfig = {
   configured?: boolean;
   origem?: { id?: string; name?: string } | null;

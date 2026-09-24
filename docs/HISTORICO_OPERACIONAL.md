@@ -21,3 +21,11 @@ Uma execution é criada como `running` antes do motor iniciar. A finalização g
 ## APIs autenticadas
 
 `GET /api/imports`, `GET /api/imports/:id`, `GET /api/imports/:id/executions`, `GET /api/executions/:id`, `GET /api/executions/:id/items` e `GET /api/executions/:id/reports` expõem somente metadados operacionais, sem hashes de senha, tokens, payload bruto da Evolution ou mensagens completas.
+
+## Histórico visual (Fase 7B)
+
+A tela segue três níveis sob demanda: Importações → Execuções da importação → Detalhes da execução. A lista usa PostgreSQL `central_os`, ordena por `importedAt` decrescente, pagina em 25 registros e aceita busca por arquivo, período, usuário, status e origem. `generatedAt` nulo aparece como “Não informado” e nunca é substituído por `importedAt`.
+
+Execuções exibem os contadores persistidos pelo Python, os snapshots de origem/destino, itens individuais e relatórios associados. O frontend não recalcula matching, score ou contadores. Relatórios só são carregados ao abrir a execução e o download resolve o arquivo pelo `reportId` dentro do diretório de saída permitido, rejeitando caminhos arbitrários.
+
+O histórico legado continua preservado nos JSONs e não é misturado à lista operacional. A rota visual nova não usa `analysis-history.json`, `current-analysis.json` ou `history-details`; `current-import.json` permanece legado e teve ausência observada em runtime, devendo ser reavaliado antes de qualquer remoção futura.

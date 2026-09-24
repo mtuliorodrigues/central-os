@@ -1,31 +1,64 @@
 import { useQuery } from "@tanstack/react-query";
-import { History, Search } from "lucide-react";
+import { Clipboard, Download, History, RefreshCw, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "../lib/api";
-import { formatDate, formatNumber } from "../lib/format";
-import type { HistoryEntry } from "../lib/types";
-import { useHistory } from "../hooks/useQueries";
+import { formatBytes, formatNumber } from "../lib/format";
+import type { OperationalExecution, OperationalImport, OperationalItem, OperationalReport } from "../lib/types";
 import { Badge } from "../components/ui/Badge";
 import { Card } from "../components/ui/Card";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/Feedback";
 import { Modal } from "../components/ui/Modal";
 import { PageHeader } from "../components/ui/PageHeader";
 
-export function HistoryPage() {
-  const history = useHistory();
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<HistoryEntry | null>(null);
-  const details = useQuery({ queryKey: ["history-details", selected?.id], queryFn: () => api.historyDetails(selected!.id!), enabled: Boolean(selected?.id), retry: false });
-  const rows = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (history.data?.history || []).filter((item) => !q || [item.fileName, ...(item.groups || [])].join(" ").toLowerCase().includes(q));
-  }, [history.data, search]);
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" });
+function date(value?: string | null) { if (!value) return "Não informado"; const parsed = new Date(value); return Number.isNaN(parsed.getTime()) ? "Não informado" : dateFormatter.format(parsed); }
+function short(value?: string | null) { return value ? `${value.slice(0, 8)}…` : "—"; }
+function statusLabel(value?: string | null) { return ({ running: "Em execução", completed: "Concluída", completed_with_errors: "Concluída com erros", failed: "Falhou", received: "Recebida" } as Record<string, string>)[String(value || "")] || value || "Não informado"; }
+function statusTone(value?: string | null): "neutral" | "success" | "warning" | "danger" | "info" { if (value === "completed") return "success"; if (value === "running" || value === "received") return "info"; if (value === "completed_with_errors") return "warning"; if (value === "failed") return "danger"; return "neutral"; }
+function itemLabel(value?: string | null) { return ({ excluded: "Excluída", found: "Encontrada", review: "Revisar", not_found: "Não localizada", sent: "Enviada", failed: "Falhou" } as Record<string, string>)[String(value || "")] || value || "Não informado"; }
+function duration(start?: string | null, end?: string | null) { if (!start) return "—"; const ms = new Date(end || Date.now()).getTime() - new Date(start).getTime(); if (!Number.isFinite(ms) || ms < 0) return "—"; return `${Math.floor(ms / 60000)}m ${Math.floor(ms / 1000) % 60}s`; }
+function copy(value?: string | null) { if (value) navigator.clipboard?.writeText(value); }
 
-  return <div className="page-stack"><PageHeader eyebrow="ANÁLISES ANTERIORES" title="Histórico" description="Importações e resultados registrados ao longo do uso da Central OS." />
-    <Card tone="cyan" className="history-hero"><div><span className="history-hero-icon"><History /></span><div><p className="eyebrow">CONTROLE E RASTREABILIDADE</p><h2>Análises e importações em um só lugar</h2><p>Consulte o que já foi processado sem alterar o histórico operacional atual.</p></div></div><Badge tone="info">{rows.length} registro(s)</Badge></Card>
-    <Card className="sheet-card"><div className="sheet-toolbar"><div className="sheet-search"><Search className="h-4 w-4" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar no histórico..." /></div></div>
-      <div className="sheet-frame">{history.isLoading ? <LoadingState /> : history.isError ? <ErrorState message={(history.error as Error).message} /> : !rows.length ? <EmptyState title="Sem histórico" description="As análises concluídas aparecerão aqui." /> : <table className="modern-table"><thead><tr><th>Importada em</th><th>Planilha</th><th>OS</th><th>Localizadas</th><th>Não localizadas</th><th>Fechadas</th><th>Pendentes</th><th>Analisada em</th><th>Ações</th></tr></thead><tbody>{rows.map((item) => <tr key={item.id || `${item.fileName}-${item.importedAt}`}><td><strong className="table-primary">{formatDate(item.importedAt)}</strong></td><td>{item.fileName || "—"}</td><td>{formatNumber(item.totalOS)}</td><td>{formatNumber(item.totalMatched)}</td><td>{formatNumber(item.totalUnmatched)}</td><td>{formatNumber(item.possiblyClosed)}</td><td>{formatNumber(item.pendingOrReview)}</td><td>{formatDate(item.analyzedAt)}</td><td><button className="outline-action" onClick={() => setSelected(item)} disabled={!item.id}>Ver detalhes</button></td></tr>)}</tbody></table>}</div>
-    </Card>
-    <Modal open={Boolean(selected)} onClose={() => setSelected(null)} title="Detalhes da análise" description={selected?.fileName} size="xl">{details.isLoading ? <LoadingState label="Carregando detalhes armazenados…" /> : details.isError ? <ErrorState message={(details.error as Error).message} /> : details.data ? <div className="history-detail-grid"><div><span>OS processadas</span><strong>{formatNumber(details.data.totalSpreadsheetOS)}</strong></div><div><span>Localizadas</span><strong>{formatNumber(details.data.totalMatched)}</strong></div><div><span>Não localizadas</span><strong>{formatNumber(details.data.totalUnmatched)}</strong></div><div><span>Período</span><strong>{details.data.days || 30} dias</strong></div></div> : null}</Modal>
+function ExecutionSummary({ execution }: { execution: OperationalExecution }) {
+  const counters = [["Linhas lidas", execution.rowsRead], ["Excluídas", execution.excludedCount], ["Elegíveis", execution.eligibleCount], ["Encontradas", execution.foundCount], ["Revisar", execution.reviewCount], ["Não localizadas", execution.notFoundCount], ["Enviadas", execution.sentCount], ["Falhas", execution.failureCount]];
+  return <div className="history-detail-grid">{counters.map(([label, value]) => <div key={String(label)}><span>{label}</span><strong>{formatNumber(Number(value || 0))}</strong></div>)}</div>;
+}
+
+function ExecutionPanel({ execution, onClose }: { execution: OperationalExecution; onClose: () => void }) {
+  const items = useQuery({ queryKey: ["operational-items", execution.id], queryFn: () => api.operationalItems(execution.id), retry: false });
+  const reports = useQuery({ queryKey: ["operational-reports", execution.id], queryFn: () => api.operationalReports(execution.id), retry: false });
+  return <Modal open onClose={onClose} title="Detalhes da execução" description={`${short(execution.id)} · ${statusLabel(execution.status)}`} size="xl">
+    <div className="history-operational-head"><Badge tone={statusTone(execution.status)}>{statusLabel(execution.status)}</Badge><span>{date(execution.startedAt)} · duração {duration(execution.startedAt, execution.finishedAt)}</span></div>
+    <ExecutionSummary execution={execution} />
+    <div className="history-section"><h3>Grupos usados</h3>{(execution.groups || []).length ? (execution.groups || []).map(group => <div className="history-group-row" key={`${group.role}-${group.jid}`}><strong>{group.role === "destination" ? "Destino" : "Origem"}</strong><span>{group.name || "Grupo sem nome"}</span><small>{group.jid || "—"}</small></div>) : <EmptyState title="Grupos não registrados" />}</div>
+    {execution.errorSummary && Object.keys(execution.errorSummary).length ? <div className="history-section"><h3>Erro resumido</h3><pre className="history-error">{JSON.stringify(execution.errorSummary, null, 2)}</pre></div> : null}
+    <div className="history-section"><h3>OS / Itens</h3>{items.isLoading ? <LoadingState /> : items.isError ? <ErrorState message={(items.error as Error).message} /> : !(items.data?.items || []).length ? <EmptyState title="Nenhum item registrado" /> : <div className="sheet-frame"><table className="modern-table"><thead><tr><th>OS</th><th>Contrato</th><th>Cliente</th><th>Status</th><th>Score</th><th>Revisão</th><th>Falha</th><th>MessageId destino</th></tr></thead><tbody>{(items.data?.items || []).map((item: OperationalItem) => <tr key={item.id}><td>{item.osNumber || "—"}</td><td>{item.contractId || "—"}</td><td>{item.clientName || "—"}</td><td><Badge tone={item.status === "failed" ? "danger" : item.status === "sent" ? "success" : item.status === "review" ? "warning" : "neutral"}>{itemLabel(item.status)}</Badge></td><td>{item.matchScore == null ? "—" : item.matchScore}</td><td>{item.reviewRequired ? "Sim" : "Não"}</td><td>{item.failureMessage || item.failureCode || "—"}</td><td>{item.messageIdDestination ? short(item.messageIdDestination) : "—"}</td></tr>)}</tbody></table></div>}</div>
+    <div className="history-section"><h3>Relatórios</h3>{reports.isLoading ? <LoadingState /> : reports.isError ? <ErrorState message={(reports.error as Error).message} /> : !(reports.data?.reports || []).length ? <EmptyState title="Nenhum relatório associado" /> : <div className="history-report-list">{(reports.data?.reports || []).map((report: OperationalReport) => <div className="history-report-row" key={report.id}><span><strong>{report.type || "Relatório"}</strong><small>{date(report.createdAt)} · {formatBytes(report.sizeBytes)}</small></span><button className="outline-action" onClick={() => api.downloadOperationalReport(report.id)}><Download className="h-3 w-3" /> Baixar</button></div>)}</div>}</div>
+  </Modal>;
+}
+
+function ImportPanel({ item, onClose }: { item: OperationalImport; onClose: () => void }) {
+  const detail = useQuery({ queryKey: ["operational-import", item.id], queryFn: () => api.operationalImport(item.id), retry: false });
+  const [selectedExecution, setSelectedExecution] = useState<OperationalExecution | null>(null);
+  const imported = detail.data?.import || item;
+  return <Modal open onClose={onClose} title="Detalhes da importação" description={imported.originalFileName || "Importação"} size="xl">
+    {detail.isLoading ? <LoadingState /> : detail.isError ? <ErrorState message={(detail.error as Error).message} /> : <>
+      <div className="history-detail-grid"><div><span>Arquivo</span><strong>{imported.originalFileName || "—"}</strong></div><div><span>Gerada em</span><strong>{date(imported.generatedAt)}</strong></div><div><span>Importada em</span><strong>{date(imported.importedAt)}</strong></div><div><span>Usuário</span><strong>{imported.userName || imported.userUsername || "Usuário removido"}</strong></div><div><span>Linhas</span><strong>{formatNumber(imported.rowCount)}</strong></div><div><span>SHA-256</span><strong title={imported.sha256 || ""}>{short(imported.sha256)}</strong></div><div><span>Origem</span><strong>{imported.source || "—"}</strong></div><div><span>ID</span><strong className="history-id" onClick={() => copy(imported.id)}><Clipboard className="h-3 w-3" /> {short(imported.id)}</strong></div></div>
+      {imported.duplicate ? <p className="history-duplicate">Arquivo já importado anteriormente.</p> : null}
+      <div className="history-section"><h3>Execuções ({detail.data?.executions?.length || 0})</h3>{!(detail.data?.executions || []).length ? <EmptyState title="Nenhuma execução registrada" description="A importação ainda não foi processada." /> : <div className="history-execution-list">{detail.data?.executions.map((execution: OperationalExecution) => <button className="history-execution-row" key={execution.id} onClick={() => setSelectedExecution(execution)}><span><strong>{short(execution.id)}</strong><small>{date(execution.startedAt)} · {duration(execution.startedAt, execution.finishedAt)}</small></span><span><Badge tone={statusTone(execution.status)}>{statusLabel(execution.status)}</Badge><small>{formatNumber(execution.foundCount)} encontradas · {formatNumber(execution.sentCount)} enviadas</small></span></button>)}</div>}</div>
+      {selectedExecution ? <ExecutionPanel execution={selectedExecution} onClose={() => setSelectedExecution(null)} /> : null}
+    </>}
+  </Modal>;
+}
+
+export function HistoryPage() {
+  const [search, setSearch] = useState(""); const [user, setUser] = useState(""); const [importedFrom, setImportedFrom] = useState(""); const [importedTo, setImportedTo] = useState(""); const [status, setStatus] = useState(""); const [source, setSource] = useState(""); const [page, setPage] = useState(1); const [selected, setSelected] = useState<OperationalImport | null>(null);
+  const query = useQuery({ queryKey: ["operational-imports", search, user, importedFrom, importedTo, status, source, page], queryFn: () => api.operationalImports({ search, user, importedFrom, importedTo, status, source, page, limit: 25 }), staleTime: 10_000, retry: 1 });
+  const rows = useMemo(() => query.data?.items || [], [query.data]);
+  return <div className="page-stack"><PageHeader eyebrow="HISTÓRICO OPERACIONAL" title="Histórico" description="Importações, execuções, itens e relatórios persistidos pela Central OS." />
+    <Card tone="cyan" className="history-hero"><div><span className="history-hero-icon"><History /></span><div><p className="eyebrow">POSTGRESQL CENTRAL_OS</p><h2>Rastreabilidade operacional</h2><p>O histórico novo é separado das análises legadas e carregado sob demanda.</p></div></div><Badge tone="info">{formatNumber(query.data?.total || 0)} importação(ões)</Badge></Card>
+    <Card className="sheet-card"><div className="sheet-toolbar history-filters"><div className="sheet-search"><Search className="h-4 w-4" /><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Buscar arquivo..." /></div><input type="text" value={user} onChange={(event) => { setUser(event.target.value); setPage(1); }} placeholder="Usuário" aria-label="Filtrar usuário" /><input type="date" value={importedFrom} onChange={(event) => { setImportedFrom(event.target.value); setPage(1); }} aria-label="Importada desde" /><input type="date" value={importedTo} onChange={(event) => { setImportedTo(event.target.value); setPage(1); }} aria-label="Importada até" /><select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} aria-label="Filtrar status"><option value="">Todos os status</option><option value="received">Recebida</option><option value="running">Em execução</option><option value="completed">Concluída</option><option value="completed_with_errors">Com erros</option><option value="failed">Falhou</option></select><select value={source} onChange={(event) => { setSource(event.target.value); setPage(1); }} aria-label="Filtrar origem"><option value="">Todas as origens</option><option value="ui">Interface</option><option value="system">Sistema</option></select><button className="icon-button" onClick={() => query.refetch()} aria-label="Atualizar histórico"><RefreshCw className="h-4 w-4" /></button></div>
+      <div className="sheet-frame">{query.isLoading ? <LoadingState /> : query.isError ? <ErrorState message={(query.error as Error).message} /> : !rows.length ? <EmptyState title="Nenhuma importação registrada no novo histórico operacional" description="Importe uma planilha para começar a rastreabilidade." /> : <table className="modern-table"><thead><tr><th>Importada em</th><th>Arquivo</th><th>Gerada em</th><th>Usuário</th><th>Linhas</th><th>Execuções</th><th>Status</th><th /></tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td><strong className="table-primary">{date(item.importedAt)}</strong></td><td>{item.originalFileName || "—"}{item.duplicate ? <small className="history-duplicate-inline">Duplicada</small> : null}</td><td>{date(item.generatedAt)}</td><td>{item.userName || item.userUsername || "Usuário removido"}</td><td>{formatNumber(item.rowCount)}</td><td>{formatNumber(item.executionCount)}</td><td><Badge tone={statusTone(item.status)}>{statusLabel(item.status)}</Badge></td><td><button className="outline-action" onClick={() => setSelected(item)}>Ver detalhes</button></td></tr>)}</tbody></table>}</div><div className="history-pagination"><span>Página {query.data?.page || page} de {query.data?.totalPages || 1}</span><button className="outline-action" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Anterior</button><button className="outline-action" disabled={page >= (query.data?.totalPages || 1)} onClick={() => setPage((value) => value + 1)}>Próxima</button></div></Card>
+    {selected ? <ImportPanel item={selected} onClose={() => setSelected(null)} /> : null}
   </div>;
 }

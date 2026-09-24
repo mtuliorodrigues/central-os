@@ -9,6 +9,8 @@ function publicImport(row) {
   return {
     id: row.id,
     userId: row.user_id,
+    userName: row.user_name || null,
+    userUsername: row.user_username || null,
     source: row.source,
     originalFileName: row.original_file_name,
     storageKey: row.storage_key,
@@ -45,6 +47,10 @@ function publicExecution(row) {
     errorSummary: row.error_summary || {},
     engineVersion: row.engine_version
   };
+}
+
+function publicGroup(row) {
+  return { role: row.role, jid: row.jid, name: row.name_snapshot || row.jid };
 }
 
 function poolOrThrow(pool) {
@@ -124,9 +130,30 @@ export async function failOperationalExecution({ executionId, errorSummary, pool
   } finally { if (own) await db.end(); }
 }
 
-export async function listImports({ pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT * FROM imports ORDER BY imported_at DESC")).rows.map(publicImport); } finally { if (own) await db.end(); } }
-export async function getImport(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const r = await db.query("SELECT * FROM imports WHERE id=$1", [id]); return r.rows[0] ? publicImport(r.rows[0]) : null; } finally { if (own) await db.end(); } }
-export async function listExecutions(importId, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT * FROM executions WHERE import_id=$1 ORDER BY created_at DESC", [importId])).rows.map(publicExecution); } finally { if (own) await db.end(); } }
-export async function getExecution(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const r = await db.query("SELECT * FROM executions WHERE id=$1", [id]); return r.rows[0] ? publicExecution(r.rows[0]) : null; } finally { if (own) await db.end(); } }
+function importSelect() { return `SELECT i.*, u.name AS user_name, u.username AS user_username,
+  (SELECT count(*)::int FROM executions e WHERE e.import_id=i.id) AS execution_count,
+  EXISTS (SELECT 1 FROM imports older WHERE older.sha256=i.sha256 AND older.imported_at<i.imported_at) AS duplicate` }
+export async function listImports({ page = 1, limit = 25, search = "", importedFrom = null, importedTo = null, user = "", status = "", source = "", pool = null } = {}) {
+  const { db, own } = poolOrThrow(pool);
+  try {
+    const where = []; const values = [];
+    if (search) { values.push(`%${search}%`); where.push(`i.original_file_name ILIKE $${values.length}`); }
+    if (importedFrom) { values.push(importedFrom); where.push(`i.imported_at >= $${values.length}::timestamptz`); }
+    if (importedTo) { values.push(`${importedTo}T23:59:59.999Z`); where.push(`i.imported_at <= $${values.length}::timestamptz`); }
+    if (user) { values.push(`%${user}%`); where.push(`(u.name ILIKE $${values.length} OR u.username ILIKE $${values.length})`); }
+    if (status) { values.push(status); where.push(`i.status=$${values.length}`); }
+    if (source) { values.push(source); where.push(`i.source=$${values.length}`); }
+    const condition = where.length ? ` WHERE ${where.join(" AND ")}` : "";
+    const totalResult = await db.query(`SELECT count(*)::int AS total FROM imports i LEFT JOIN users u ON u.id=i.user_id${condition}`, values);
+    const safePage = Math.max(1, Number(page) || 1); const safeLimit = Math.min(100, Math.max(1, Number(limit) || 25)); const offset = (safePage - 1) * safeLimit;
+    const queryValues = [...values, safeLimit, offset];
+    const rows = await db.query(`${importSelect()} FROM imports i LEFT JOIN users u ON u.id=i.user_id${condition} ORDER BY i.imported_at DESC LIMIT $${queryValues.length - 1} OFFSET $${queryValues.length}`, queryValues);
+    return { items: rows.rows.map(row => ({ ...publicImport(row), executionCount: row.execution_count || 0, duplicate: Boolean(row.duplicate) })), page: safePage, limit: safeLimit, total: totalResult.rows[0].total, totalPages: Math.max(1, Math.ceil(totalResult.rows[0].total / safeLimit)) };
+  } finally { if (own) await db.end(); }
+}
+export async function getImport(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const r = await db.query(`${importSelect()} FROM imports i LEFT JOIN users u ON u.id=i.user_id WHERE i.id=$1`, [id]); return r.rows[0] ? { ...publicImport(r.rows[0]), executionCount: r.rows[0].execution_count || 0, duplicate: Boolean(r.rows[0].duplicate) } : null; } finally { if (own) await db.end(); } }
+export async function listExecutions(importId, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const result = await db.query(`SELECT e.*, u.name AS user_name, u.username AS user_username FROM executions e LEFT JOIN users u ON u.id=e.requested_by_user_id WHERE e.import_id=$1 ORDER BY e.created_at DESC`, [importId]); const groups = await db.query("SELECT execution_id,role,jid,name_snapshot FROM execution_groups WHERE execution_id = ANY($1::uuid[])", [result.rows.map(row => row.id)]); const by = new Map(); for (const group of groups.rows) { if (!by.has(group.execution_id)) by.set(group.execution_id, []); by.get(group.execution_id).push(publicGroup(group)); } return result.rows.map(row => ({ ...publicExecution(row), userName: row.user_name || null, userUsername: row.user_username || null, groups: by.get(row.id) || [] })); } finally { if (own) await db.end(); } }
+export async function getExecution(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const r = await db.query("SELECT e.*, u.name AS user_name, u.username AS user_username FROM executions e LEFT JOIN users u ON u.id=e.requested_by_user_id WHERE e.id=$1", [id]); if (!r.rows[0]) return null; const groups = await db.query("SELECT role,jid,name_snapshot FROM execution_groups WHERE execution_id=$1 ORDER BY role", [id]); return { ...publicExecution(r.rows[0]), userName: r.rows[0].user_name || null, userUsername: r.rows[0].user_username || null, groups: groups.rows.map(publicGroup) }; } finally { if (own) await db.end(); } }
 export async function listExecutionItems(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT id,row_number AS \"rowNumber\",os_number AS \"osNumber\",contract_id AS \"contractId\",client_name AS \"clientName\",status,match_score AS \"matchScore\",match_reasons AS \"matchReasons\",message_id_source AS \"messageIdSource\",message_id_destination AS \"messageIdDestination\",failure_code AS \"failureCode\",failure_message AS \"failureMessage\",review_required AS \"reviewRequired\" FROM execution_items WHERE execution_id=$1 ORDER BY row_number", [id])).rows; } finally { if (own) await db.end(); } }
 export async function listExecutionReports(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { return (await db.query("SELECT id,type,storage_key AS \"storageKey\",sha256,size_bytes AS \"sizeBytes\",metadata,created_at AS \"createdAt\" FROM reports WHERE execution_id=$1 ORDER BY created_at", [id])).rows; } finally { if (own) await db.end(); } }
+export async function getReport(id, { pool = null } = {}) { const { db, own } = poolOrThrow(pool); try { const result = await db.query("SELECT r.id,r.type,r.storage_key AS \"storageKey\",r.sha256,r.size_bytes AS \"sizeBytes\",r.metadata,r.execution_id AS \"executionId\" FROM reports r WHERE r.id=$1", [id]); return result.rows[0] || null; } finally { if (own) await db.end(); } }

@@ -5,6 +5,11 @@ import type {
   HealthResponse,
   HistoryEntry,
   ImportSummary,
+  OperationalExecution,
+  OperationalImportsResponse,
+  OperationalImport,
+  OperationalItem,
+  OperationalReport,
   RelatorioConfig,
   RelatorioStatus,
   SpreadsheetInfo,
@@ -99,6 +104,22 @@ export const api = {
   }),
   history: () => request<{ history: HistoryEntry[] }>("/api/historico"),
   historyDetails: (id: string) => request<AnalysisResponse>(`/api/historico/${encodeURIComponent(id)}`),
+  operationalImports: (params: Record<string, string | number | undefined> = {}) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== "").map(([key, value]) => [key, String(value)]));
+    return request<OperationalImportsResponse>(`/api/imports${query.toString() ? `?${query}` : ""}`);
+  },
+  operationalImport: (id: string) => request<{ import: OperationalImport; executions: OperationalExecution[] }>(`/api/imports/${encodeURIComponent(id)}`),
+  operationalExecutions: (id: string) => request<{ executions: OperationalExecution[] }>(`/api/imports/${encodeURIComponent(id)}/executions`),
+  operationalExecution: (id: string) => request<{ execution: OperationalExecution }>(`/api/executions/${encodeURIComponent(id)}`),
+  operationalItems: (id: string) => request<{ items: OperationalItem[] }>(`/api/executions/${encodeURIComponent(id)}/items`),
+  operationalReports: (id: string) => request<{ reports: OperationalReport[] }>(`/api/executions/${encodeURIComponent(id)}/reports`),
+  operationalReportDownload: (id: string) => `${API_ROOT}/api/reports/${encodeURIComponent(id)}/download`,
+  downloadOperationalReport: async (id: string) => {
+    const token = sessionStorage.getItem("central_os_session_token");
+    const response = await fetch(`${API_ROOT}/api/reports/${encodeURIComponent(id)}/download`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!response.ok) throw new ApiError("Relatório indisponível.", response.status);
+    const blob = await response.blob(); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = response.headers.get("content-disposition")?.match(/filename="([^"]+)/)?.[1] || "relatorio"; anchor.click(); URL.revokeObjectURL(url);
+  },
   reportConfig: () => request<RelatorioConfig>("/api/relatorio/config"),
   reportStatus: () => request<RelatorioStatus>("/api/relatorio/status"),
   reportLogs: () => request<{ logs: string[] | string }>("/api/relatorio/logs"),
