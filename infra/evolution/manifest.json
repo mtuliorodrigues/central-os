@@ -1,0 +1,13 @@
+{
+  "sourceRepository": "https://github.com/evolution-foundation/evolution-api.git",
+  "baseTag": "2.3.7",
+  "baseCommit": "cd800f2976e1e5b682fbf86a01ee4d85ae61f370",
+  "image": "evolution-api-forward-sync-direct:2.3.7-phase2-fix1",
+  "patch": "patches/evolution-api-2.3.7-phase2-fix1.patch",
+  "sha256": {
+    "patch": "3DAB72D403F068CE20DE8BD972889B32D3C1B11BCC845F420D38728D66DAD520",
+    "upstreamDockerfile": "E7ED73860CFECC3FCD8EC934A55595C94824E58D3B8DEF161A1A96610E260764",
+    "upstreamPackageJson": "1531E84D95A57368CE1D50C75FBA2FC13C2E468D8FF5401847D7FFD39DDCC10C",
+    "upstreamPackageLock": "86660862BF3E58ED20EA5A339B9656FCDF2E3F638DEAA726712460A6D7E7E7FB"
+  }
+}

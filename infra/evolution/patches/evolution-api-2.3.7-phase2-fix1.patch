@@ -1,0 +1,214 @@
+diff --git a/src/api/controllers/chat.controller.ts b/src/api/controllers/chat.controller.ts
+index 22e90b9..d362019 100644
+--- a/src/api/controllers/chat.controller.ts
++++ b/src/api/controllers/chat.controller.ts
+@@ -60,0 +61,9 @@ export class ChatController {
++  // RELATORIO_OS_SYNC_HISTORY
++  public async syncHistory(
++    { instanceName }: InstanceDto,
++    data: { key: any; messageTimestamp: number; count?: number; timeoutMs?: number },
++  ) {
++    const instance = this.waMonitor.waInstances[instanceName] as any;
++    return await instance.syncHistory(data);
++  }
++
+diff --git a/src/api/controllers/sendMessage.controller.ts b/src/api/controllers/sendMessage.controller.ts
+index 64aa1c8..426c688 100644
+--- a/src/api/controllers/sendMessage.controller.ts
++++ b/src/api/controllers/sendMessage.controller.ts
+@@ -37,0 +38,14 @@ export class SendMessageController {
++  // RELATORIO_OS_NATIVE_FORWARD
++  public async forwardMessage(
++    { instanceName }: InstanceDto,
++    data: { number: string; message: any; forceForward?: boolean },
++  ) {
++    const instance = this.waMonitor.waInstances[instanceName] as any;
++
++    if (!instance?.forwardMessage) {
++      throw new BadRequestException('Native forward is available only for WHATSAPP-BAILEYS');
++    }
++
++    return await instance.forwardMessage(data);
++  }
++
+diff --git a/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts b/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
+index 60e857f..ea25b31 100644
+--- a/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
++++ b/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
+@@ -2209,0 +2210,12 @@ export class BaileysStartupService extends ChannelStartupService {
++    // RELATORIO_OS_FORWARD_DIRECT_TO_BAILEYS
++    if (message['forward']) {
++      return await this.client.sendMessage(
++        sender,
++        {
++          forward: message['forward'],
++          force: message['force'] ?? true,
++        } as unknown as AnyMessageContent,
++        option as unknown as MiscMessageGenerationOptions,
++      );
++    }
++
+@@ -2627,0 +2640,143 @@ export class BaileysStartupService extends ChannelStartupService {
++  // RELATORIO_OS_NATIVE_FORWARD
++  public async forwardMessage(data: { number: string; message: WAMessage; forceForward?: boolean }) {
++    if (!data?.number) {
++      throw new BadRequestException('Destination number/group is required');
++    }
++
++    if (!data?.message?.message) {
++      throw new BadRequestException('Original WAMessage is required');
++    }
++
++    // Use the standard send pipeline so the forwarded message is persisted
++    // and emits the same logs/webhooks as every other outgoing message.
++    return await this.sendMessageWithTyping(
++      data.number,
++      {
++        forward: data.message,
++        force: data.forceForward ?? true,
++      } as any,
++    );
++  }
++
++  // RELATORIO_OS_SYNC_HISTORY_DIRECT
++  public async syncHistory(data: {
++    key: WAMessageKey;
++    messageTimestamp: number;
++    count?: number;
++    timeoutMs?: number;
++  }) {
++    if (!data?.key?.remoteJid || !data?.key?.id || !data?.messageTimestamp) {
++      throw new BadRequestException('key and messageTimestamp are required');
++    }
++
++    const count = Math.min(50, Math.max(1, Number(data.count ?? 50)));
++    const timeoutMs = Math.min(30000, Math.max(5000, Number(data.timeoutMs ?? 18000)));
++    const remoteJid = data.key.remoteJid;
++
++    let requestId: string | undefined;
++
++    const result = await new Promise<{
++      messages: WAMessage[];
++      timedOut: boolean;
++      eventSyncType?: number;
++      peerDataRequestSessionId?: string;
++      totalEventMessages?: number;
++    }>(async (resolve, reject) => {
++      let finished = false;
++      let timer: ReturnType<typeof setTimeout>;
++
++      const cleanup = () => {
++        try {
++          this.client.ev.off('messaging-history.set', handler as any);
++        } catch {}
++        if (timer) {
++          clearTimeout(timer);
++        }
++      };
++
++      const handler = (event: any) => {
++        if (finished) {
++          return;
++        }
++
++        const syncType = event?.syncType;
++
++        if (syncType !== proto.HistorySync.HistorySyncType.ON_DEMAND) {
++          return;
++        }
++
++        const eventRequestId = event?.peerDataRequestSessionId
++          ? String(event.peerDataRequestSessionId)
++          : undefined;
++
++        // Nas versões que fornecem peerDataRequestSessionId, amarra o
++        // retorno ao requestId desta chamada.
++        if (requestId && eventRequestId && eventRequestId !== requestId) {
++          return;
++        }
++
++        const allMessages: WAMessage[] = Array.isArray(event?.messages) ? event.messages : [];
++        const groupMessages = allMessages.filter(
++          (message: WAMessage) => message?.key?.remoteJid === remoteJid,
++        );
++
++        finished = true;
++        cleanup();
++
++        resolve({
++          messages: groupMessages,
++          timedOut: false,
++          eventSyncType: syncType,
++          peerDataRequestSessionId: eventRequestId,
++          totalEventMessages: allMessages.length,
++        });
++      };
++
++      this.client.ev.on('messaging-history.set', handler as any);
++
++      timer = setTimeout(() => {
++        if (finished) {
++          return;
++        }
++
++        finished = true;
++        cleanup();
++
++        resolve({
++          messages: [],
++          timedOut: true,
++          totalEventMessages: 0,
++        });
++      }, timeoutMs);
++
++      try {
++        const id = await this.client.fetchMessageHistory(
++          count,
++          data.key,
++          data.messageTimestamp as any,
++        );
++
++        requestId = id ? String(id) : undefined;
++      } catch (error) {
++        if (!finished) {
++          finished = true;
++          cleanup();
++          reject(error);
++        }
++      }
++    });
++
++    return {
++      requestId,
++      requestedCount: count,
++      remoteJid,
++      timeoutMs,
++      received: result.messages.length,
++      totalEventMessages: result.totalEventMessages ?? result.messages.length,
++      timedOut: result.timedOut,
++      eventSyncType: result.eventSyncType,
++      peerDataRequestSessionId: result.peerDataRequestSessionId,
++      messages: result.messages,
++    };
++  }
++
+diff --git a/src/api/routes/chat.router.ts b/src/api/routes/chat.router.ts
+index 158947e..59b4d89 100644
+--- a/src/api/routes/chat.router.ts
++++ b/src/api/routes/chat.router.ts
+@@ -163,0 +164,5 @@ export class ChatRouter extends RouterBroker {
++      // RELATORIO_OS_SYNC_HISTORY
++      .post(this.routerPath('syncHistory'), ...guards, async (req, res) => {
++        const response = await chatController.syncHistory(req.params as any, req.body);
++        return res.status(HttpStatus.OK).json(response);
++      })
+diff --git a/src/api/routes/sendMessage.router.ts b/src/api/routes/sendMessage.router.ts
+index cd073db..ca554e5 100644
+--- a/src/api/routes/sendMessage.router.ts
++++ b/src/api/routes/sendMessage.router.ts
+@@ -53,0 +54,5 @@ export class MessageRouter extends RouterBroker {
++      // RELATORIO_OS_NATIVE_FORWARD
++      .post(this.routerPath('forwardMessage'), ...guards, async (req, res) => {
++        const response = await sendMessageController.forwardMessage(req.params as any, req.body);
++        return res.status(HttpStatus.CREATED).json(response);
++      })

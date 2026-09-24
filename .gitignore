@@ -5,6 +5,7 @@
 **/.env.*
 !**/.env.example
 !**/.env.*.example
+!/apps/central-os/frontend/.env.production
 
 *.pem
 *.key
@@ -125,3 +126,11 @@ Desktop.ini
 /fonrend/
 /scripts/start_CORRIGIDO.ps1
 /scripts/healthcheck_CORRIGIDO.ps1
+
+# Phase 2 operational harnesses contain real execution identifiers/evidence.
+# Keep them on disk under the operational workspace, never in Git.
+/scripts/EXECUTAR_LOTE_FASE2_CONTROLADO.py
+/scripts/EXECUTAR_LOTE_FASE2_CONTROLADO.txt
+
+# Vercel CLI local linkage and pulled environment data.
+.vercel/

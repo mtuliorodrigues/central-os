@@ -14,6 +14,8 @@ Load-EnvFile (Join-Path $Root 'config\app.env')
 Load-EnvFile (Join-Path $Root 'apps\relatorio-os\.env')
 $base= if ($env:EVOLUTION_BASE_URL) {$env:EVOLUTION_BASE_URL.TrimEnd('/')} else {'http://127.0.0.1:8080'}
 $instance= if ($env:EVOLUTION_INSTANCE) {$env:EVOLUTION_INSTANCE} else {'sgp-whatsapp'}
+$evolutionContainer= if ($env:EVOLUTION_CONTAINER) {$env:EVOLUTION_CONTAINER} else {'evolution_api'}
+$expectedEvolutionImage= if ($env:EVOLUTION_EXPECTED_IMAGE) {$env:EVOLUTION_EXPECTED_IMAGE} else {'evolution-api-forward-sync-direct:2.3.7-phase2-fix1'}
 $container= if ($env:POSTGRES_CONTAINER) {$env:POSTGRES_CONTAINER} else {'evolution_postgres'}
 $redisContainer= if ($env:REDIS_CONTAINER) {$env:REDIS_CONTAINER} else {'evolution_redis'}
 $dbuser= if ($env:POSTGRES_USER) {$env:POSTGRES_USER} else {'evolution'}
@@ -28,6 +30,9 @@ $result.PostgreSQL=($LASTEXITCODE -eq 0 -and ($pg -join '').Trim() -eq '1')
 $redis = & docker exec $redisContainer redis-cli ping 2>$null
 $result.Redis=($LASTEXITCODE -eq 0 -and ($redis -join '').Trim() -eq 'PONG')
 try { $r=Invoke-WebRequest -Uri $base -UseBasicParsing -TimeoutSec 5; $result.Evolution=$true } catch { if ($_.Exception.Response) {$result.Evolution=$true} else {$result.Evolution=$false} }
+$activeEvolutionImage = (& docker inspect --format '{{.Config.Image}}' $evolutionContainer 2>$null | Select-Object -First 1)
+$result.EvolutionImage=([bool]$activeEvolutionImage -and $activeEvolutionImage.Trim() -eq $expectedEvolutionImage)
+$result.EvolutionImageActive=if($activeEvolutionImage){$activeEvolutionImage.Trim()}else{$null}
 $result.WhatsApp=$false; $result.WhatsAppState=$null
 if ($env:AUTHENTICATION_API_KEY) {
   try { $state=Invoke-RestMethod -Uri "$base/instance/connectionState/$instance" -Headers @{apikey=$env:AUTHENTICATION_API_KEY} -TimeoutSec 8; $s=if($state.instance.state){$state.instance.state}else{$state.state};$result.WhatsAppState=$s;$result.WhatsApp=($s -in @('open','connected')) } catch {}
@@ -61,11 +66,12 @@ try {
   $summary=Invoke-RestMethod -Uri "http://127.0.0.1:$port/api/resumo" -TimeoutSec 5
   $result.CentralOS=([bool]$h.ok -and $null -ne $summary)
 } catch {$result.CentralOS=$false}
-$result.OK=($result.Docker -and $result.PostgreSQL -and $result.Redis -and $result.Evolution -and $result.WhatsApp -and $result.RelatorioConfig -and $result.Listener -and $result.CentralOS)
+$result.OK=($result.Docker -and $result.PostgreSQL -and $result.Redis -and $result.Evolution -and $result.EvolutionImage -and $result.WhatsApp -and $result.RelatorioConfig -and $result.Listener -and $result.CentralOS)
 if ($Json) { $result | ConvertTo-Json -Depth 4 } else {
   Write-Host ''
   Write-Host '=== RESUMO CENTRAL OS LOCAL ==='
-  foreach($k in @('Docker','PostgreSQL','Redis','Evolution','WhatsApp','RelatorioConfig','Listener','CentralOS')) { $v=if($result[$k]){'OK'}else{'ERRO'}; Write-Host ("{0,-24} {1}" -f ($k+' .......'),$v) }
+  foreach($k in @('Docker','PostgreSQL','Redis','Evolution','EvolutionImage','WhatsApp','RelatorioConfig','Listener','CentralOS')) { $v=if($result[$k]){'OK'}else{'ERRO'}; Write-Host ("{0,-24} {1}" -f ($k+' .......'),$v) }
+  if (-not $result.EvolutionImage) { Write-Host "Evolution image: $($result.EvolutionImageActive)" }
   if (-not $result.WhatsApp) { Write-Host "WhatsApp state: $($result.WhatsAppState)" }
   if ($result.ListenerCount -ne 1) { Write-Host "Listeners encontrados: $($result.ListenerCount)" }
   $ready=if($result.OK){'SIM'}else{'NAO'}

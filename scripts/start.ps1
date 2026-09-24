@@ -30,6 +30,8 @@ $env:CENTRAL_OS_ROOT=$Root
 if(-not $env:CENTRAL_OS_PORT){$env:CENTRAL_OS_PORT='8788'}
 if(-not $env:EVOLUTION_BASE_URL){$env:EVOLUTION_BASE_URL='http://127.0.0.1:8080'}
 if(-not $env:EVOLUTION_INSTANCE){$env:EVOLUTION_INSTANCE='sgp-whatsapp'}
+if(-not $env:EVOLUTION_CONTAINER){$env:EVOLUTION_CONTAINER='evolution_api'}
+if(-not $env:EVOLUTION_EXPECTED_IMAGE){$env:EVOLUTION_EXPECTED_IMAGE='evolution-api-forward-sync-direct:2.3.7-phase2-fix1'}
 if(-not $env:POSTGRES_CONTAINER){$env:POSTGRES_CONTAINER='evolution_postgres'}
 if(-not $env:POSTGRES_USER){$env:POSTGRES_USER='evolution'}
 if(-not $env:POSTGRES_DB){$env:POSTGRES_DB='evolution'}
@@ -63,6 +65,10 @@ if(-not(Evo-Up)){
   }else{throw 'Evolution indisponivel e inicio automatico da stack existente desativado.'}
 }
 Wait-Until { Evo-Up } 120 'Evolution respondendo'|Out-Null
+$activeEvolutionImage=(& docker inspect --format '{{.Config.Image}}' $env:EVOLUTION_CONTAINER 2>$null | Select-Object -First 1)
+if(-not $activeEvolutionImage){throw "Container Evolution nao encontrado: $($env:EVOLUTION_CONTAINER)."}
+if($activeEvolutionImage.Trim() -ne $env:EVOLUTION_EXPECTED_IMAGE){throw "Imagem Evolution ativa inesperada: $activeEvolutionImage. Esperada: $($env:EVOLUTION_EXPECTED_IMAGE)."}
+Log "[OK] Evolution usa a imagem aprovada: $activeEvolutionImage."
 function Postgres-Up { try { $v=& docker exec $env:POSTGRES_CONTAINER psql -U $env:POSTGRES_USER -d $env:POSTGRES_DB -t -A -c 'SELECT 1;' 2>$null; return ($LASTEXITCODE -eq 0 -and ($v -join '').Trim() -eq '1') } catch { return $false } }
 function Redis-Up { try { $v=& docker exec $env:REDIS_CONTAINER redis-cli ping 2>$null; return ($LASTEXITCODE -eq 0 -and ($v -join '').Trim() -eq 'PONG') } catch { return $false } }
 Wait-Until { Postgres-Up } 120 'PostgreSQL SELECT 1'|Out-Null
