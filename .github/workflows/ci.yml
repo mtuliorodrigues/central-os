@@ -22,3 +22,20 @@ jobs:
         run: npm run check
       - name: Tests
         run: npm test
+      - name: Install React frontend dependencies
+        run: npm --prefix apps/central-os/frontend ci
+      - name: React lint
+        run: npm --prefix apps/central-os/frontend run lint
+      - name: React typecheck
+        run: npm --prefix apps/central-os/frontend run typecheck
+      - name: React production build
+        run: npm --prefix apps/central-os/frontend run build
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Relatorio OS dependencies
+        run: python -m pip install -r apps/relatorio-os/requirements.txt
+      - name: Relatorio OS isolated tests
+        working-directory: apps/relatorio-os
+        run: python -m unittest discover -s test -p "test_*.py" -v

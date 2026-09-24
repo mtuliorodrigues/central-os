@@ -10,7 +10,12 @@ import type {
   SummaryResponse
 } from "./types";
 
-const API_ROOT = String(import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+export type AppMode = "integrated" | "local-runtime";
+
+const configuredMode = String(import.meta.env.VITE_APP_MODE || "integrated").toLowerCase();
+export const APP_MODE: AppMode = configuredMode === "local-runtime" ? "local-runtime" : "integrated";
+const configuredApiRoot = String(import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+export const API_ROOT = configuredApiRoot || (APP_MODE === "local-runtime" ? "http://127.0.0.1:8788" : "");
 
 export class ApiError extends Error {
   status: number;

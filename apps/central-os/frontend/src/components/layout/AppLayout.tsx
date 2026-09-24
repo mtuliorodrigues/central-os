@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { RuntimeConnectionBanner } from "./RuntimeConnectionBanner";
 
 export function AppLayout() {
   const [sidebarPinnedExpanded, setSidebarPinnedExpanded] = useState(true);
@@ -12,6 +13,7 @@ export function AppLayout() {
       <Sidebar onWidthChange={setSidebarPinnedExpanded} />
       <div className="app-stage">
         <Topbar />
+        <RuntimeConnectionBanner />
         <main className="app-main">
           <AnimatePresence mode="wait">
             <motion.div key={location.pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.16 }}>

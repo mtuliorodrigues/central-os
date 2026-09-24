@@ -1,17 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm --prefix apps/central-os/frontend ci",
+  "buildCommand": "npm --prefix apps/central-os/frontend run build",
+  "outputDirectory": "apps/central-os/frontend/dist",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/importar-planilha", "destination": "/" },
-    { "source": "/os-analisadas", "destination": "/os-analisadas.html" },
-    { "source": "/localizadas", "destination": "/localizadas.html" },
-    { "source": "/nao-localizadas", "destination": "/nao-localizadas.html" },
-    { "source": "/pendentes", "destination": "/pendentes.html" },
-    { "source": "/historico", "destination": "/historico.html" },
-    { "source": "/relatorio", "destination": "/os-analisadas.html" },
-    { "source": "/possivelmente-fechadas", "destination": "/possivelmente-fechadas.html" },
-    { "source": "/grupos", "destination": "/grupos.html" },
-    { "source": "/configuracoes", "destination": "/configuracoes.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
