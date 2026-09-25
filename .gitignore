@@ -40,6 +40,8 @@ node_modules/
 .venv/
 venv/
 env/
+!/infra/aws/env/
+!/infra/aws/env/*.example
 __pycache__/
 *.py[cod]
 *.pyd

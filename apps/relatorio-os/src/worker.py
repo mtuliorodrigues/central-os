@@ -18,6 +18,7 @@ GROUPS_FILE = Path(os.getenv("RELATORIO_GROUPS_FILE", "/data/config/grupos_relat
 USERS_FILE = Path(os.getenv("RELATORIO_USERS_FILE", "/data/config/usuarios_relatorio.json")).resolve()
 MOTOR = Path(os.getenv("RELATORIO_MOTOR", HERE / "motor_relatorio_os.py")).resolve()
 LISTENER = Path(os.getenv("RELATORIO_LISTENER", HERE / "COMANDO_WHATSAPP_RELATORIO_USUARIOS.py")).resolve()
+START_LISTENER = os.getenv("RELATORIO_START_LISTENER", "true").strip().lower() in {"1", "true", "yes", "on"}
 PORT = int(os.getenv("RELATORIO_WORKER_PORT", "8090"))
 HOST = os.getenv("RELATORIO_WORKER_HOST", "0.0.0.0")
 
@@ -73,13 +74,14 @@ def safe_sheet(name: str) -> Path:
 def health_payload():
     running = bool(listener_process and listener_process.poll() is None)
     return {
-        "ok": running and MOTOR.is_file(),
+        "ok": MOTOR.is_file() and (running if START_LISTENER else True),
         "service": "relatorio-os-worker",
         "uptimeSeconds": int(time.time() - started_at),
         "listener": {
             "running": running,
             "pid": listener_process.pid if running else None,
             "returnCode": None if running else (listener_process.poll() if listener_process else None),
+            "managedByWorker": START_LISTENER,
         },
         "motor": {"exists": MOTOR.is_file()},
         "config": {
@@ -172,7 +174,8 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     ensure_dirs()
-    start_listener()
+    if START_LISTENER:
+        start_listener()
     httpd = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"Relatório OS worker: http://{HOST}:{PORT}", flush=True)
     httpd.serve_forever()

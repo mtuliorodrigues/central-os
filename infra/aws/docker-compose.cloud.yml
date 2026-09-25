@@ -1,0 +1,182 @@
+name: central-os-cloud
+
+services:
+  reverse-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8080"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      central-os-backend:
+        condition: service_healthy
+    networks: [central-os]
+
+  central-os-backend:
+    build:
+      context: ../..
+      dockerfile: apps/central-os/Dockerfile
+    restart: unless-stopped
+    expose: ["8788"]
+    env_file: ./env/cloud.env
+    environment:
+      CENTRAL_OS_HOST: 0.0.0.0
+      CENTRAL_OS_PORT: 8788
+      DATABASE_URL: postgresql://central_os_app:${CENTRAL_OS_DB_PASSWORD:?set in cloud.env}@postgres:5432/central_os
+      EVOLUTION_BASE_URL: http://evolution:8080
+      RELATORIO_WORKER_URL: http://relatorio-os-worker:8090
+    volumes:
+      - central-os-data:/srv/central-os/data
+      - central-os-logs:/srv/central-os/logs
+      - central-os-config:/srv/central-os/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      evolution:
+        condition: service_healthy
+      relatorio-os-worker:
+        condition: service_healthy
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8788/api/health').then(r=>r.ok?0:process.exit(1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  relatorio-os-worker:
+    build:
+      context: ../..
+      dockerfile: apps/relatorio-os/Dockerfile
+    restart: unless-stopped
+    expose: ["8090"]
+    env_file: ./env/cloud.env
+    environment:
+      RELATORIO_WORKER_HOST: 0.0.0.0
+      RELATORIO_WORKER_PORT: 8090
+      EVOLUTION_BASE_URL: http://evolution:8080
+      RELATORIO_PLANILHAS_DIR: /srv/central-os/planilhas
+      RELATORIO_OUTPUT_DIR: /srv/central-os/reports
+      RELATORIO_LISTENER_LOG_DIR: /srv/central-os/logs/listener
+      RELATORIO_GROUPS_FILE: /srv/central-os/config/grupos_relatorio_os.json
+      RELATORIO_USERS_FILE: /srv/central-os/config/usuarios_relatorio.json
+      RELATORIO_START_LISTENER: "false"
+    volumes:
+      - central-os-planilhas:/srv/central-os/planilhas
+      - central-os-reports:/srv/central-os/reports
+      - central-os-logs:/srv/central-os/logs
+      - central-os-config:/srv/central-os/config
+    depends_on:
+      evolution:
+        condition: service_healthy
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request; d=json.load(urllib.request.urlopen('http://127.0.0.1:8090/health',timeout=3)); raise SystemExit(0 if d.get('ok') else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  listener:
+    build:
+      context: ../..
+      dockerfile: apps/relatorio-os/Dockerfile
+    command: ["python", "apps/relatorio-os/src/COMANDO_WHATSAPP_RELATORIO_USUARIOS.py"]
+    restart: unless-stopped
+    env_file: ./env/cloud.env
+    environment:
+      EVOLUTION_BASE_URL: http://evolution:8080
+      RELATORIO_START_LISTENER: "false"
+      RELATORIO_PLANILHAS_DIR: /srv/central-os/planilhas
+      RELATORIO_OUTPUT_DIR: /srv/central-os/reports
+      RELATORIO_LISTENER_LOG_DIR: /srv/central-os/logs/listener
+      RELATORIO_GROUPS_FILE: /srv/central-os/config/grupos_relatorio_os.json
+      RELATORIO_USERS_FILE: /srv/central-os/config/usuarios_relatorio.json
+    volumes:
+      - central-os-planilhas:/srv/central-os/planilhas
+      - central-os-logs:/srv/central-os/logs
+      - central-os-config:/srv/central-os/config
+    depends_on:
+      evolution:
+        condition: service_healthy
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; os.kill(1,0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  evolution:
+    image: ${EVOLUTION_IMAGE:-central-os/evolution:2.3.7-phase2-fix1}
+    restart: unless-stopped
+    expose: ["8080"]
+    env_file: ./env/cloud.env
+    environment:
+      SERVER_PORT: 8080
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution_app:${EVOLUTION_DB_PASSWORD:?set in cloud.env}@postgres:5432/evolution
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - evolution-data:/evolution/instances
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    expose: ["5432"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?set in cloud.env}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose: ["6379"]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks: [central-os]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  central-os:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  evolution-data:
+  central-os-data:
+  central-os-planilhas:
+  central-os-reports:
+  central-os-logs:
+  central-os-config:

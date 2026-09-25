@@ -1,8 +1,11 @@
 diff --git a/src/api/controllers/chat.controller.ts b/src/api/controllers/chat.controller.ts
-index 22e90b9..d362019 100644
+index 22e90b9faaf96499d3492ae2ca7278978d9f4bbe..d362019693e36d65f1964fd4c7d4239db10c247b 100644
 --- a/src/api/controllers/chat.controller.ts
 +++ b/src/api/controllers/chat.controller.ts
-@@ -60,0 +61,9 @@ export class ChatController {
+@@ -58,6 +58,15 @@ export class ChatController {
+     return await this.waMonitor.waInstances[instanceName].getBase64FromMediaMessage(data);
+   }
+ 
 +  // RELATORIO_OS_SYNC_HISTORY
 +  public async syncHistory(
 +    { instanceName }: InstanceDto,
@@ -12,11 +15,17 @@ index 22e90b9..d362019 100644
 +    return await instance.syncHistory(data);
 +  }
 +
+   public async fetchMessages({ instanceName }: InstanceDto, query: Query<Message>) {
+     return await this.waMonitor.waInstances[instanceName].fetchMessages(query);
+   }
 diff --git a/src/api/controllers/sendMessage.controller.ts b/src/api/controllers/sendMessage.controller.ts
-index 64aa1c8..426c688 100644
+index 64aa1c84684a335dd96dc70fd210f335308f16a3..426c6889e3627f7419749c3f1e93f2fa5c322671 100644
 --- a/src/api/controllers/sendMessage.controller.ts
 +++ b/src/api/controllers/sendMessage.controller.ts
-@@ -37,0 +38,14 @@ export class SendMessageController {
+@@ -35,6 +35,20 @@ export class SendMessageController {
+     return await this.waMonitor.waInstances[instanceName].templateMessage(data);
+   }
+ 
 +  // RELATORIO_OS_NATIVE_FORWARD
 +  public async forwardMessage(
 +    { instanceName }: InstanceDto,
@@ -31,11 +40,17 @@ index 64aa1c8..426c688 100644
 +    return await instance.forwardMessage(data);
 +  }
 +
+   public async sendText({ instanceName }: InstanceDto, data: SendTextDto) {
+     return await this.waMonitor.waInstances[instanceName].textMessage(data);
+   }
 diff --git a/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts b/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
-index 60e857f..ea25b31 100644
+index 60e857fcc1206776575921c9060d05efdd7ff432..ea25b31d13b2236852fc21825cf2a7300c942eca 100644
 --- a/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
 +++ b/src/api/integrations/channel/whatsapp/whatsapp.baileys.service.ts
-@@ -2209,0 +2210,12 @@ export class BaileysStartupService extends ChannelStartupService {
+@@ -2207,6 +2207,18 @@ export class BaileysStartupService extends ChannelStartupService {
+       );
+     }
+ 
 +    // RELATORIO_OS_FORWARD_DIRECT_TO_BAILEYS
 +    if (message['forward']) {
 +      return await this.client.sendMessage(
@@ -48,7 +63,13 @@ index 60e857f..ea25b31 100644
 +      );
 +    }
 +
-@@ -2627,0 +2640,143 @@ export class BaileysStartupService extends ChannelStartupService {
+     if (!message['audio'] && !message['poll'] && !message['sticker'] && sender != 'status@broadcast') {
+       return await this.client.sendMessage(
+         sender,
+@@ -2625,6 +2637,149 @@ export class BaileysStartupService extends ChannelStartupService {
+     }
+   }
+ 
 +  // RELATORIO_OS_NATIVE_FORWARD
 +  public async forwardMessage(data: { number: string; message: WAMessage; forceForward?: boolean }) {
 +    if (!data?.number) {
@@ -192,23 +213,38 @@ index 60e857f..ea25b31 100644
 +    };
 +  }
 +
+   // Send Message Controller
+   public async textMessage(data: SendTextDto, isIntegration = false) {
+     const text = data.text;
 diff --git a/src/api/routes/chat.router.ts b/src/api/routes/chat.router.ts
-index 158947e..59b4d89 100644
+index 158947ed228016e1b670082ce914bba2f1b11872..59b4d89a24b9ac7b6fd467bf1b93bd4f92a2a270 100644
 --- a/src/api/routes/chat.router.ts
 +++ b/src/api/routes/chat.router.ts
-@@ -163,0 +164,5 @@ export class ChatRouter extends RouterBroker {
+@@ -161,6 +161,11 @@ export class ChatRouter extends RouterBroker {
+ 
+         return res.status(HttpStatus.OK).json(response);
+       })
 +      // RELATORIO_OS_SYNC_HISTORY
 +      .post(this.routerPath('syncHistory'), ...guards, async (req, res) => {
 +        const response = await chatController.syncHistory(req.params as any, req.body);
 +        return res.status(HttpStatus.OK).json(response);
 +      })
+       .post(this.routerPath('findMessages'), ...guards, async (req, res) => {
+         const response = await this.dataValidate<Query<Message>>({
+           request: req,
 diff --git a/src/api/routes/sendMessage.router.ts b/src/api/routes/sendMessage.router.ts
-index cd073db..ca554e5 100644
+index cd073dba3dfd56311dc21d9ca78514eb0cbb264a..ca554e59b7a7a9023725b4c3df7a016f29d7e2d5 100644
 --- a/src/api/routes/sendMessage.router.ts
 +++ b/src/api/routes/sendMessage.router.ts
-@@ -53,0 +54,5 @@ export class MessageRouter extends RouterBroker {
+@@ -51,6 +51,11 @@ export class MessageRouter extends RouterBroker {
+ 
+         return res.status(HttpStatus.CREATED).json(response);
+       })
 +      // RELATORIO_OS_NATIVE_FORWARD
 +      .post(this.routerPath('forwardMessage'), ...guards, async (req, res) => {
 +        const response = await sendMessageController.forwardMessage(req.params as any, req.body);
 +        return res.status(HttpStatus.CREATED).json(response);
 +      })
+       .post(this.routerPath('sendText'), ...guards, async (req, res) => {
+         const response = await this.dataValidate<SendTextDto>({
+           request: req,
